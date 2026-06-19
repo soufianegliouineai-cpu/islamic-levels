@@ -1,6 +1,5 @@
 // ==================== STATE ====================
 let authState = { isLoggedIn: false, user: null, isGuest: false };
-let familyManager = null;
 let state = {
   level: 1, xp: 0, streak: 0, longestStreak: 0, gems: 0, totalDays: 0, lastDate: null,
   todayTasks: [], completedChallenges: [], achievements: [], darkMode: false,
@@ -18,6 +17,78 @@ let state = {
 // ==================== CONSTANTS ====================
 const GEM_TO_MAD_RATE = 0.2;
 const LEVEL_REQUIREMENTS = { 2: 30, 3: 60, 4: 90, 5: 120 };
+
+const SHOP_CATEGORIES = {
+  dailyRewards: {
+    title: '🎁 مكافآت يومية', icon: '🎁',
+    items: [
+      { id: 'daily_1', name: 'يوم 1', desc: 'المكافأة اليومية', icon: '🌟', price: 0, type: 'daily', day: 1, reward: 10 },
+      { id: 'daily_3', name: '3 أيام', desc: 'مكافأة 3 أيام', icon: '🔥', price: 0, type: 'daily', day: 3, reward: 30 },
+      { id: 'daily_7', name: 'أسبوع', desc: 'مكافأة أسبوع', icon: '👑', price: 0, type: 'daily', day: 7, reward: 100 },
+      { id: 'daily_14', name: 'أسبوعين', desc: 'مكافأة أسبوعين', icon: '💎', price: 0, type: 'daily', day: 14, reward: 200 },
+      { id: 'daily_30', name: 'شهر', desc: 'مكافأة شهر', icon: '🏆', price: 0, type: 'daily', day: 30, reward: 500 }
+    ]
+  },
+  powerups: {
+    title: '⚡ تعزيزات', icon: '⚡',
+    items: [
+      { id: 'streak_freeze', name: 'تجميد السلسلة', desc: 'احفظ سلامتك يوم', icon: '🧊', price: 50, type: 'consumable', effect: 'freeze' },
+      { id: 'double_xp', name: 'مضاعف XP', desc: 'ضعف الخبرة ساعة', icon: '⚡', price: 100, type: 'consumable', effect: 'doubleXP' },
+      { id: 'shield', name: 'درع الحماية', desc: 'حماية السلسلة', icon: '🛡️', price: 150, type: 'consumable', effect: 'shield' },
+      { id: 'bonus_gems', name: 'صندوق جواهر', desc: '+25 جوهرة', icon: '🎁', price: 30, type: 'consumable', effect: 'bonusGems' },
+      { id: 'auto_complete', name: 'إكمال تلقائي', desc: 'أكمل 3 مهام', icon: '🤖', price: 200, type: 'consumable', effect: 'autoComplete' },
+      { id: 'time_freeze', name: 'تجميد الوقت', desc: 'تأجيل 3 أيام', icon: '⏰', price: 300, type: 'consumable', effect: 'timeFreeze' }
+    ]
+  },
+  avatars: {
+    title: '👤 الصور', icon: '👤',
+    items: [
+      { id: 'avatar_mosque', name: 'مسجد', desc: 'مسجد', icon: '🕌', price: 100, type: 'avatar' },
+      { id: 'avatar_quran', name: 'قرآن', desc: 'مصحف', icon: '📖', price: 100, type: 'avatar' },
+      { id: 'avatar_star', name: 'نجمة', desc: 'نجمة ذهبية', icon: '⭐', price: 150, type: 'avatar' },
+      { id: 'avatar_moon', name: 'قمر', desc: 'قمر إسلامي', icon: '🌙', price: 150, type: 'avatar' },
+      { id: 'avatar_kabah', name: 'كعبة', desc: 'الكعبة', icon: '🕋', price: 200, type: 'avatar' },
+      { id: 'avatar_palmtree', name: 'نخلة', desc: 'نخلة', icon: '🌴', price: 80, type: 'avatar' },
+      { id: 'avatar_horse', name: 'حصان', desc: 'حصان', icon: '🐴', price: 120, type: 'avatar' },
+      { id: 'avatar_eagle', name: 'نسر', desc: 'نسر', icon: '🦅', price: 120, type: 'avatar' },
+      { id: 'avatar_lion', name: 'أسد', desc: 'أسد', icon: '🦁', price: 180, type: 'avatar' },
+      { id: 'avatar_diamond', name: 'ماسة', desc: 'ماسة', icon: '💎', price: 250, type: 'avatar' }
+    ]
+  },
+  themes: {
+    title: '🎨 الثيمات', icon: '🎨',
+    items: [
+      { id: 'theme_ocean', name: 'المحيط', desc: 'أزرق', icon: '🌊', price: 120, type: 'theme', color: '#0891B2' },
+      { id: 'theme_forest', name: 'الغابة', desc: 'أخضر', icon: '🌲', price: 120, type: 'theme', color: '#059669' },
+      { id: 'theme_sunset', name: 'الغروب', desc: 'برتقالي', icon: '🌅', price: 150, type: 'theme', color: '#EA580C' },
+      { id: 'theme_purple', name: 'بنفسجي', desc: 'بنفسجي', icon: '💜', price: 150, type: 'theme', color: '#7C3AED' },
+      { id: 'theme_rose', name: 'وردي', desc: 'وردي', icon: '🌹', price: 150, type: 'theme', color: '#E11D48' },
+      { id: 'theme_night', name: 'ليلي', desc: 'داكن', icon: '🌑', price: 200, type: 'theme', color: '#1E293B' },
+      { id: 'theme_gold', name: 'ذهبي', desc: 'ذهبي', icon: '✨', price: 250, type: 'theme', color: '#B45309' },
+      { id: 'theme_ramadan', name: 'رمضان', desc: 'رمضاني', icon: '🌙', price: 300, type: 'theme', color: '#059669' }
+    ]
+  },
+  badges: {
+    title: '🏅 الشارات', icon: '🏅',
+    items: [
+      { id: 'badge_gold_star', name: 'نجمة', desc: 'ذهبية', icon: '⭐', price: 200, type: 'badge' },
+      { id: 'badge_crown', name: 'تاج', desc: 'ملكي', icon: '👑', price: 300, type: 'badge' },
+      { id: 'badge_sword', name: 'سيف', desc: 'إسلامي', icon: '⚔️', price: 250, type: 'badge' },
+      { id: 'badge_diamond', name: 'ماس', desc: 'نادر', icon: '💎', price: 350, type: 'badge' },
+      { id: 'badge_fire', name: 'نار', desc: 'همة', icon: '🔥', price: 220, type: 'badge' }
+    ]
+  },
+  charity: {
+    title: '💰 الصدقات', icon: '💰',
+    items: [
+      { id: 'charity_water', name: 'ماء', desc: 'ماء', icon: '💧', price: 100, type: 'charity' },
+      { id: 'charity_food', name: 'طعام', desc: 'طعام', icon: '🍞', price: 150, type: 'charity' },
+      { id: 'charity_education', name: 'تعليم', desc: 'تعليم', icon: '📚', price: 200, type: 'charity' },
+      { id: 'charity_mosque', name: 'مسجد', desc: 'بناء مسجد', icon: '🕌', price: 500, type: 'charity' },
+      { id: 'charity_orphan', name: 'يتيم', desc: 'كفالة يتيم', icon: '👶', price: 300, type: 'charity' }
+    ]
+  }
+};
 
 function convertGemsToMad(gems) { return Math.floor(gems * GEM_TO_MAD_RATE); }
 function convertMadToGems(mad) { return Math.ceil(mad / GEM_TO_MAD_RATE); }
@@ -503,6 +574,79 @@ function updatePrayerBanner() { const current = prayerService.getCurrentPrayer()
 let deferredPrompt; window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
+// ==================== SUPABASE INTEGRATION ====================
+async function initSupabase() {
+  try {
+    const tables = await supabaseSetup.checkTables();
+    state.supabaseConnected = Object.values(tables).every(v => v);
+    
+    if (state.supabaseConnected) {
+      console.log('✅ Supabase connected');
+      // Sync current state if user is logged in
+      if (supabaseService.userId) {
+        await supabaseService.syncState(state);
+      }
+    } else {
+      console.log('⚠️ Supabase tables not created yet');
+      // Show setup banner
+      const banner = document.createElement('div');
+      banner.id = 'supabase-setup-banner';
+      banner.style.cssText = 'position: fixed; bottom: 70px; left: 16px; right: 16px; padding: 12px; background: linear-gradient(135deg, #F59E0B, #D97706); color: white; border-radius: 14px; z-index: 999; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600;';
+      banner.innerHTML = '<span>⚠️ قاعدة البيانات غير مُعدة</span><button onclick="showSupabaseSetup()" style="background: white; color: #D97706; border: none; padding: 6px 12px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 12px;">الإعداد</button>';
+      if (document.getElementById('appContainer').style.display !== 'none') {
+        document.body.appendChild(banner);
+      }
+    }
+  } catch (e) {
+    console.warn('Supabase init error:', e);
+  }
+}
+
+function showSupabaseSetup() {
+  const instructions = supabaseSetup.getSetupInstructions();
+  let html = '<div style="text-align: right;">';
+  html += '<h3 style="font-size: 18px; margin-bottom: 12px;">⚙️ إعداد قاعدة بيانات Supabase</h3>';
+  html += '<p style="margin-bottom: 12px;">لتفعيل المزامنة بين الأجهزة، أنشئ الجداول في Supabase:</p>';
+  html += '<ol style="text-align: right; line-height: 2; margin-bottom: 16px;">';
+  html += '<li>افتح <a href="' + instructions.url + '" target="_blank" style="color: var(--primary); font-weight: 700;">Supabase Dashboard → SQL Editor</a></li>';
+  html += '<li>الصق محتوى ملف supabase-schema.sql</li>';
+  html += '<li>اضغط Run</li>';
+  html += '<li>انتظر حتى تكتمل العملية</li></ol>';
+  html += '<p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">الجداول المطلوبة:</p>';
+  html += '<div style="font-size: 11px; background: var(--bg); padding: 12px; border-radius: 10px; margin-bottom: 12px; line-height: 1.8;">';
+  instructions.tables.forEach(t => html += '<span style="display: inline-block; padding: 2px 6px; background: var(--surface); border-radius: 4px; margin: 2px;">' + t + '</span> ');
+  html += '</div>';
+  html += '<button class="btn btn-primary" onclick="checkSupabaseSetup()">🔍 تحقق من الإعداد</button>';
+  html += '</div>';
+  
+  document.getElementById('familyContent').innerHTML = html;
+  showScreen('family');
+}
+
+async function checkSupabaseSetup() {
+  showNotification('⏳ جاري التحقق...', 'يرجى الانتظار');
+  await initSupabase();
+  const banner = document.getElementById('supabase-setup-banner');
+  if (banner && state.supabaseConnected) banner.remove();
+  if (state.supabaseConnected) {
+    alert('✅ تم إعداد قاعدة البيانات بنجاح!');
+  } else {
+    alert('❌ الجداول غير موجودة بعد، تأكد من تشغيل SQL');
+  }
+}
+
+async function syncWithSupabase() {
+  if (!state.supabaseConnected) {
+    console.warn('Supabase not connected, skipping sync');
+    return;
+  }
+  try {
+    await supabaseService.syncState(state);
+  } catch (e) {
+    console.warn('Sync failed:', e);
+  }
+}
+
 // ==================== INIT ====================
-function showApp() { document.getElementById('authModal').style.display = 'none'; document.getElementById('appContainer').style.display = 'block'; document.getElementById('headerSubtitle').textContent = 'مرحباً، ' + (authState.user?.name || 'ضيف') + '!'; renderLevels(); updateHeaderGems(); if (state.prayerTimesEnabled) initPrayerTimes(); if (state.equippedTheme) applyTheme(state.equippedTheme); setInterval(updatePrayerBanner, 60000); }
+function showApp() { document.getElementById('authModal').style.display = 'none'; document.getElementById('appContainer').style.display = 'block'; document.getElementById('headerSubtitle').textContent = 'مرحباً، ' + (authState.user?.name || 'ضيف') + '!'; renderLevels(); updateHeaderGems(); if (state.prayerTimesEnabled) initPrayerTimes(); if (state.equippedTheme) applyTheme(state.equippedTheme); setInterval(updatePrayerBanner, 60000); setTimeout(initSupabase, 1000); }
 document.addEventListener('DOMContentLoaded', () => { const savedAuth = localStorage.getItem('islamicAuth'); if (savedAuth) { authState = JSON.parse(savedAuth); if (authState.isLoggedIn) { loadState(); showApp(); return; } } loadState(); document.getElementById('authModal').style.display = 'flex'; });
