@@ -1,21 +1,280 @@
 // ==================== COMPREHENSIVE WORSHIP DATA ====================
 
-// Prayer names in Arabic
-const PRAYER_NAMES = {
-  fajr: 'الفجر',
-  sunrise: 'الشروق',
-  dhuhr: 'الظهر',
-  asr: 'العصر',
-  maghrib: 'المغرب',
-  isha: 'العشاء'
+const PRAYER_NAMES = { fajr: 'الفجر', sunrise: 'الشروق', dhuhr: 'الظهر', asr: 'العصر', maghrib: 'المغرب', isha: 'العشاء' };
+
+// ==================== LEVELS WITH DETAILED TASKS ====================
+const LEVELS = [
+  {
+    id: 1, title: "البداية المشرقة", subtitle: "المستوى للمبتدئين", duration: "30-45 دقيقة", reward: 10, xp: 50,
+    color: ["#10B981", "#0D9488"], icon: "🌱", description: "أول خطوة في رحلتك الإيمانية - بناء أساس قوي من العبادات اليومية",
+    sections: [
+      { title: "📖 القرآن الكريم", tasks: [
+        { text: "تلاوة صفحة واحدة من القرآن بتركيز", xp: 10 },
+        { text: "الاستماع إلى تلاوة صفحة واحدة", xp: 5 },
+        { text: "قراءة تفسير صفحة واحدة", xp: 10 }
+      ]},
+      { title: "🕌 الصلاة والعبادة", tasks: [
+        { text: "الحفاظ على الصلوات الخمس في أوقاتها", xp: 20 },
+        { text: "صلاة ركعتي الضحى مرة واحدة في الأسبوع", xp: 10 },
+        { text: "الوضوء بخشوع وتدبر", xp: 5 }
+      ]},
+      { title: "📿 الذكر والأدعية", tasks: [
+        { text: "أذكار الصباح أو المساء (اختيار أحدهما)", xp: 15 },
+        { text: "الاستغفار 100 مرة", xp: 10 },
+        { text: "الصلاة على النبي ﷺ 100 مرة", xp: 10 },
+        { text: "قول سبحان الله وبحمده 100 مرة", xp: 10 }
+      ]},
+      { title: "📚 العلم الشرعي", tasks: [
+        { text: "قراءة حديث نبوي واحد وفهم معناه", xp: 10 },
+        { text: "قراءة فقرة قصيرة (5 دقائق) من كتاب إسلامي", xp: 10 }
+      ]},
+      { title: "💝 الأعمال الصالحة", tasks: [
+        { text: "الابتسامة في وجه الآخرين", xp: 5 },
+        { text: "إماطة الأذى عن الطريق", xp: 5 },
+        { text: "الدعاء للوالدين والمسلمين", xp: 10 }
+      ]}
+    ]
+  },
+  {
+    id: 2, title: "المسار المنتظم", subtitle: "للراغبين في الانتظام", duration: "60-90 دقيقة", reward: 30, xp: 150,
+    color: ["#3B82F6", "#0891B2"], icon: "📚", description: "برنامج يومي منظم مع بناء عادات إيمانية قوية",
+    sections: [
+      { title: "📖 القرآن الكريم", tasks: [
+        { text: "تلاوة جزء من القرآن يوميًا (ختمة كل شهر)", xp: 20 },
+        { text: "حفظ آيتين إلى خمس آيات من جزء عم", xp: 25 },
+        { text: "10 دقائق تدبر لمعاني الآيات", xp: 15 },
+        { text: "قراءة تفسير الآيات المقروءة", xp: 15 }
+      ]},
+      { title: "🕌 الصلاة والعبادة", tasks: [
+        { text: "الحفاظ على الصلوات الخمس مع السنن الرواتب", xp: 30 },
+        { text: "صلاة الضحى يوميًا (ركعتين على الأقل)", xp: 15 },
+        { text: "صلاة الوتر قبل النوم", xp: 15 },
+        { text: "الحرص على صلاة الجماعة في المسجد", xp: 20 }
+      ]},
+      { title: "📿 الذكر والأدعية", tasks: [
+        { text: "أذكار الصباح والمساء كاملة", xp: 20 },
+        { text: "الاستغفار 200 مرة", xp: 15 },
+        { text: "الصلاة على النبي ﷺ 200 مرة", xp: 15 },
+        { text: "التسبيح والتحميد والتهليل 100 مرة", xp: 15 }
+      ]},
+      { title: "📚 العلم الشرعي", tasks: [
+        { text: "15 دقيقة قراءة من كتاب إسلامي في الفقه أو العقيدة", xp: 15 },
+        { text: "الاستماع إلى محاضرة علمية قصيرة (10-15 دقيقة)", xp: 15 },
+        { text: "تعلم حكم فقهي جديد أو سنة نبوية", xp: 15 }
+      ]},
+      { title: "🌙 الصيام والصدقة", tasks: [
+        { text: "صيام يومي الاثنين والخميس (مرة في الشهر على الأقل)", xp: 20 },
+        { text: "صدقة يومية ولو قليلة", xp: 15 },
+        { text: "قراءة سورة الكهف يوم الجمعة", xp: 15 }
+      ]},
+      { title: "💝 الأعمال الصالحة", tasks: [
+        { text: "مساعدة أحد أفراد الأسرة أو الجيران", xp: 15 },
+        { text: "بر الوالدين والإحسان إليهما", xp: 20 },
+        { text: "زيارة الأقارب", xp: 15 }
+      ]}
+    ]
+  },
+  {
+    id: 3, title: "طالب العلم", subtitle: "للراغبين في التعمق", duration: "90-120 دقيقة", reward: 60, xp: 300,
+    color: ["#8B5CF6", "#DB2777"], icon: "🎓", description: "مستوى متوازن ومستدام للتعمق في العلم الشرعي",
+    sections: [
+      { title: "📖 القرآن الكريم", tasks: [
+        { text: "تلاوة جزء من القرآن الكريم يوميًا", xp: 25 },
+        { text: "مراجعة نصف حزب من المحفوظ السابق", xp: 20 },
+        { text: "حفظ نصف صفحة من القرآن يوميًا", xp: 30 },
+        { text: "15 دقيقة تدبر عميق للآيات", xp: 20 }
+      ]},
+      { title: "🕌 الصلاة والعبادة", tasks: [
+        { text: "الحفاظ على الصلوات الخمس مع السنن في المسجد", xp: 35 },
+        { text: "صلاة الضحى (4 ركعات)", xp: 15 },
+        { text: "قيام الليل (ركعتين على الأقل) مع الدعاء", xp: 25 },
+        { text: "صلاة التراويح في رمضان", xp: 20 }
+      ]},
+      { title: "📿 الذكر والأدعية", tasks: [
+        { text: "أذكار اليوم كاملة (صباح، مساء، نوم، استيقاظ)", xp: 25 },
+        { text: "الاستغفار 300 مرة", xp: 15 },
+        { text: "الصلاة على النبي ﷺ 300 مرة", xp: 15 },
+        { text: "الإكثار من لا إله إلا الله ولا حول ولا قوة إلا بالله", xp: 15 }
+      ]},
+      { title: "📚 العلم الشرعي", tasks: [
+        { text: "30 دقيقة قراءة من كتاب علمي متخصص", xp: 25 },
+        { text: "حضور درس علمي صوتي أو مرئي منتظم (30-45 دقيقة)", xp: 25 },
+        { text: "تدوين الفوائد العلمية المستفادة", xp: 15 }
+      ]},
+      { title: "🌙 الصيام والصدقة", tasks: [
+        { text: "صيام يومي الاثنين والخميس أسبوعيًا", xp: 20 },
+        { text: "صيام الأيام البيض (13، 14، 15 من كل شهر قمري)", xp: 25 },
+        { text: "صدقة يومية منتظمة", xp: 15 }
+      ]},
+      { title: "💝 الأعمال الصالحة", tasks: [
+        { text: "زيارة مريض أو تفقد جار", xp: 20 },
+        { text: "الدعوة إلى الله بالكلمة الطيبة", xp: 20 },
+        { text: "بر الوالدين والإحسان إليهما", xp: 20 },
+        { text: "صلة الأرحام", xp: 15 }
+      ]}
+    ]
+  },
+  {
+    id: 4, title: "المجتهد", subtitle: "للهمم العالية", duration: "2-3 ساعات", reward: 120, xp: 600,
+    color: ["#F97316", "#DC2626"], icon: "⚡", description: "مستوى متقدم لأصحاب الهمم العالية",
+    sections: [
+      { title: "📖 القرآن الكريم", tasks: [
+        { text: "تلاوة جزأين من القرآن يوميًا (ختمة كل 15 يومًا)", xp: 40 },
+        { text: "حفظ صفحة كاملة من القرآن يوميًا", xp: 40 },
+        { text: "مراجعة محفوظ سابق (جزء كامل)", xp: 25 },
+        { text: "20 دقيقة تدبر وتفسير عميق للآيات", xp: 25 }
+      ]},
+      { title: "🕌 الصلاة والعبادة", tasks: [
+        { text: "الحفاظ على الصلوات مع السنن والتبكير للمسجد", xp: 40 },
+        { text: "صلاة الضحى (6-8 ركعات)", xp: 20 },
+        { text: "قيام الليل (4 ركعات فأكثر) مع الإطالة", xp: 35 },
+        { text: "صلاة الأوابين بعد المغرب", xp: 15 }
+      ]},
+      { title: "📿 الذكر والأدعية", tasks: [
+        { text: "أذكار اليوم كاملة مع الإكثار من جميع الأنواع", xp: 30 },
+        { text: "الاستغفار 500 مرة", xp: 20 },
+        { text: "الصلاة على النبي ﷺ 500 مرة", xp: 20 },
+        { text: "ورد يومي من التسبيح والتحميد والتهليل والتكبير", xp: 20 }
+      ]},
+      { title: "📚 العلم الشرعي", tasks: [
+        { text: "ساعة دراسة كتاب شرعي متقدم", xp: 35 },
+        { text: "حضور درس علمي منتظم مع شيخ أو معلم (ساعة)", xp: 35 },
+        { text: "البحث في مسألة علمية أو قراءة مقال متخصص", xp: 25 }
+      ]},
+      { title: "🌙 الصيام والصدقة", tasks: [
+        { text: "صيام يوم وفطر يوم (صيام داود عليه السلام)", xp: 30 },
+        { text: "صدقة يومية ولو قليلة مع البحث عن المحتاجين", xp: 20 }
+      ]},
+      { title: "💝 الأعمال الصالحة والدعوة", tasks: [
+        { text: "المشاركة في عمل خيري أو تطوعي", xp: 25 },
+        { text: "الدعوة إلى الله بالحكمة والموعظة الحسنة", xp: 25 },
+        { text: "زيارة الأرحام وصلة الأقارب", xp: 20 },
+        { text: "كفالة يتيم أو مسكين (إن أمكن)", xp: 30 }
+      ]}
+    ]
+  },
+  {
+    id: 5, title: "الهمة العالية", subtitle: "القمة والتميز الإيماني", duration: "3-5 ساعات", reward: 200, xp: 1000,
+    color: ["#EF4444", "#E11D48"], icon: "👑", description: "مستوى متقدم جداً لأصحاب الهمم العالية جداً",
+    sections: [
+      { title: "📖 القرآن الكريم", tasks: [
+        { text: "تلاوة 3 إلى 5 أجزاء يوميًا (ختمة أسبوعية)", xp: 60 },
+        { text: "ورد تدبر يومي مفصل (30 دقيقة فأكثر) مع كتابة الخواطر", xp: 50 },
+        { text: "حفظ صفحة إلى صفحتين مع مراجعة مكثفة", xp: 50 },
+        { text: "حفظ المتون في التجويد أو القراءات", xp: 40 }
+      ]},
+      { title: "🕌 الصلاة والعبادة", tasks: [
+        { text: "الحفاظ على الصلوات مع السنن والتبكير للمسجد", xp: 50 },
+        { text: "صلاة الضحى (8 ركعات فأكثر)", xp: 25 },
+        { text: "قيام الليل (نصف الليل أو أكثر) مع الإطالة", xp: 50 },
+        { text: "صلاة التوبة والاستخارة عند الحاجة", xp: 20 }
+      ]},
+      { title: "📿 الذكر والأدعية", tasks: [
+        { text: "أذكار الصباح والمساء والنوم والاستيقاظ بالإكثار الشديد", xp: 40 },
+        { text: "الاستغفار 1000 مرة فأكثر", xp: 30 },
+        { text: "الصلاة على النبي ﷺ 1000 مرة فأكثر", xp: 30 },
+        { text: "ورد يومي من جميع أنواع الذكر والتسبيح", xp: 30 }
+      ]},
+      { title: "📚 العلم الشرعي", tasks: [
+        { text: "دراسة كتب العقيدة والفقه والحديث بشكل متعمق (ساعتان فأكثر)", xp: 50 },
+        { text: "سماع دروس علمية يومية من عدة مشايخ", xp: 40 },
+        { text: "المشاركة في حلقات العلم أو الدروس المسجدية", xp: 35 },
+        { text: "تحضير الدروس أو تلخيص الكتب", xp: 35 }
+      ]},
+      { title: "🌙 الصيام والصدقة", tasks: [
+        { text: "صيام يوم وفطر يوم بشكل منتظم", xp: 40 },
+        { text: "صيام أيام التطوع الأخرى (عاشوراء، عرفة، إلخ)", xp: 30 },
+        { text: "صدقة يومية كبيرة أو مشاريع خيرية", xp: 30 }
+      ]},
+      { title: "💝 الأعمال الصالحة والدعوة", tasks: [
+        { text: "الدعوة إلى الله وتعليم الأهل والأبناء والجيران", xp: 40 },
+        { text: "المشاركة الفعالة في نشر الخير والعلم", xp: 40 },
+        { text: "زيارة المرضى، تشييع الجنائز، إغاثة الملهوف", xp: 35 },
+        { text: "كفالة الأيتام والأرامل والفقراء", xp: 40 },
+        { text: "حسن الخلق مع الجميع والصبر على الأذى", xp: 30 }
+      ]}
+    ]
+  }
+];
+
+const ACHIEVEMENTS = [
+  { id: "first-day", title: "أول يوم", icon: "🌟", gems: 10, xp: 50, check: s => s.totalDays >= 1 },
+  { id: "streak-3", title: "سلسلة 3", icon: "🔥", gems: 30, xp: 100, check: s => s.streak >= 3 },
+  { id: "streak-7", title: "سلسلة أسبوع", icon: "🔥", gems: 100, xp: 300, check: s => s.streak >= 7 },
+  { id: "streak-30", title: "سلسلة شهر", icon: "🔥", gems: 500, xp: 1000, check: s => s.streak >= 30 },
+  { id: "streak-100", title: "سلسلة 100", icon: "💎", gems: 1000, xp: 5000, check: s => s.streak >= 100 },
+  { id: "level-2", title: "المستوى 2", icon: "📚", gems: 50, xp: 200, check: s => s.level >= 2 },
+  { id: "level-3", title: "المستوى 3", icon: "🎓", gems: 100, xp: 500, check: s => s.level >= 3 },
+  { id: "level-5", title: "المستوى 5", icon: "👑", gems: 300, xp: 2000, check: s => s.level >= 5 },
+  { id: "gems-100", title: "100 جوهرة", icon: "💎", gems: 20, xp: 100, check: s => s.gems >= 100 },
+  { id: "gems-500", title: "500 جوهرة", icon: "💎", gems: 100, xp: 500, check: s => s.gems >= 500 },
+  { id: "gems-1000", title: "1000 جوهرة", icon: "💰", gems: 200, xp: 1000, check: s => s.gems >= 1000 },
+  { id: "perfect-week", title: "أسبوع كامل", icon: "✅", gems: 150, xp: 500, check: s => s.totalDays >= 7 },
+  { id: "perfect-month", title: "شهر كامل", icon: "🏆", gems: 500, xp: 2000, check: s => s.totalDays >= 30 },
+  { id: "all-prayers", title: "الصلوات الخمس", icon: "🕌", gems: 50, xp: 200, check: s => Object.keys(s.todayPrayers || {}).length >= 5 },
+  { id: "dhikr-master", title: "سيد الذكر", icon: "📿", gems: 100, xp: 500, check: s => s.totalDhikr >= 1000 },
+  { id: "quran-hafiz", title: "حافظ القرآن", icon: "📖", gems: 500, xp: 3000, check: s => s.totalQuran >= 604 },
+  { id: "xp-1000", title: "مئة ألف", icon: "⭐", gems: 100, xp: 500, check: s => s.xp >= 1000 },
+  { id: "xp-5000", title: "خمسة آلاف", icon: "⭐", gems: 300, xp: 2000, check: s => s.xp >= 5000 },
+  { id: "xp-10000", title: "عشرة آلاف", icon: "⭐", gems: 500, xp: 5000, check: s => s.xp >= 10000 }
+];
+
+const STREAK_FREEZE = { gems: 50 };
+
+// XP required for each level
+const XP_PER_LEVEL = {
+  1: 0,
+  2: 500,
+  3: 1500,
+  4: 4000,
+  5: 10000
 };
 
-// ==================== ADHKAR (Remembrances) ====================
+// Calculate level from XP
+function calculateLevel(xp) {
+  if (xp >= XP_PER_LEVEL[5]) return 5;
+  if (xp >= XP_PER_LEVEL[4]) return 4;
+  if (xp >= XP_PER_LEVEL[3]) return 3;
+  if (xp >= XP_PER_LEVEL[2]) return 2;
+  return 1;
+}
+
+// Get XP progress for current level
+function getXPProgress(xp) {
+  const level = calculateLevel(xp);
+  if (level >= 5) return { current: xp, needed: 0, percent: 100 };
+  
+  const currentLevelXP = XP_PER_LEVEL[level];
+  const nextLevelXP = XP_PER_LEVEL[level + 1];
+  const progress = xp - currentLevelXP;
+  const needed = nextLevelXP - currentLevelXP;
+  
+  return {
+    current: progress,
+    needed: needed,
+    percent: Math.round((progress / needed) * 100)
+  };
+}
+
+// Daily worship schedule
+const DAILY_WORSHIP = {
+  faraid: [
+    { name: 'الفجر', key: 'fajr', icon: '🌅', fard: 2, sunnahQabliyyah: 2, sunnahBaadiyyah: 0 },
+    { name: 'الظهر', key: 'dhuhr', icon: '☀️', fard: 4, sunnahQabliyyah: 4, sunnahBaadiyyah: 2 },
+    { name: 'العصر', key: 'asr', icon: '🌤️', fard: 4, sunnahQabliyyah: 0, sunnahBaadiyyah: 0 },
+    { name: 'المغرب', key: 'maghrib', icon: '🌅', fard: 3, sunnahQabliyyah: 0, sunnahBaadiyyah: 3 },
+    { name: 'العشاء', key: 'isha', icon: '🌙', fard: 4, sunnahQabliyyah: 0, sunnahBaadiyyah: 2 }
+  ],
+  nawafil: [
+    { name: 'الضحى', key: 'duha', icon: '⭐', rakat: 2, time: 'بعد شروق الشمس' },
+    { name: 'الوتر', key: 'witr', icon: '🌙', rakat: 3, time: 'قبل الفجر' }
+  ]
+};
+
+// Adhkar data
 const ADHKAR = {
   morning: {
-    title: 'أذكار الصباح',
-    icon: '☀️',
-    time: 'من الفجر إلى شروق الشمس',
+    title: 'أذكار الصباح', icon: '☀️', time: 'من الفجر إلى شروق الشمس',
     items: [
       { text: 'أصبحنا وأصبح الملك لله، والحمد لله، لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير', count: 1, reward: 100 },
       { text: 'اللهم بك أصبحنا وبك أمسينا، وبك نحيا وبك نموت وإليك النشور', count: 1, reward: 100 },
@@ -24,29 +283,21 @@ const ADHKAR = {
       { text: 'أستغفر الله وأتوب إليه', count: 100, reward: 1000 },
       { text: 'بسم الله الذي لا يضر مع اسمه شيء في الأرض ولا في السماء وهو السميع العليم', count: 3, reward: 300 },
       { text: 'اللهم إني أسألك العافية في الدنيا والآخرة', count: 3, reward: 300 },
-      { text: 'حسبي الله لا إله إلا عليه توكلت وهو رب العرش العظيم', count: 7, reward: 700 },
-      { text: 'سبحان الله عدد خلقه، سبحان الله عدد نعمه، سبحان الله عدد ما في كتابه', count: 3, reward: 300 },
-      { text: 'اللهم صلِّ وسلم على نبينا محمد', count: 10, reward: 1000 }
+      { text: 'حسبي الله لا إله إلا عليه توكلت وهو رب العرش العظيم', count: 7, reward: 700 }
     ]
   },
   evening: {
-    title: 'أذكار المساء',
-    icon: '🌙',
-    time: 'من العصر إلى المغرب',
+    title: 'أذكار المساء', icon: '🌙', time: 'من العصر إلى المغرب',
     items: [
       { text: 'أمسينا وأمسى الملك لله، والحمد لله، لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير', count: 1, reward: 100 },
       { text: 'اللهم بك أمسينا وبك أصبحنا، وبك نحيا وبك نموت وإليك المحشور', count: 1, reward: 100 },
       { text: 'أستغفر الله وأتوب إليه', count: 100, reward: 1000 },
       { text: 'بسم الله الذي لا يضر مع اسمه شيء في الأرض ولا في السماء وهو السميع العليم', count: 3, reward: 300 },
-      { text: 'أعوذ بكلمات الله التامات من شر ما خلق', count: 3, reward: 300 },
-      { text: 'اللهم إني أسألك العافية في الدنيا والآخرة', count: 3, reward: 300 },
-      { text: 'سبحان الله وبحمده', count: 100, reward: 1000 }
+      { text: 'أعوذ بكلمات الله التامات من شر ما خلق', count: 3, reward: 300 }
     ]
   },
   afterPrayer: {
-    title: 'أذكار بعد الصلاة',
-    icon: '🕌',
-    time: 'بعد كل صلاة مفروضة',
+    title: 'أذكار بعد الصلاة', icon: '🕌', time: 'بعد كل صلاة مفروضة',
     items: [
       { text: 'أستغفر الله', count: 3, reward: 300 },
       { text: 'اللهم أنت السلام ومنك السلام، تباركت يا ذا الجلال والإكرام', count: 1, reward: 100 },
@@ -57,9 +308,7 @@ const ADHKAR = {
     ]
   },
   sleep: {
-    title: 'أذكار النوم',
-    icon: '😴',
-    time: 'قبل النوم',
+    title: 'أذكار النوم', icon: '😴', time: 'قبل النوم',
     items: [
       { text: 'باسمك اللهم أموت وأحيا', count: 1, reward: 100 },
       { text: 'سبحان الله', count: 33, reward: 3300 },
@@ -72,17 +321,13 @@ const ADHKAR = {
     ]
   },
   wake: {
-    title: 'أذكار الاستيقاظ',
-    icon: '⏰',
-    time: 'عند الاستيقاظ من النوم',
+    title: 'أذكار الاستيقاظ', icon: '⏰', time: 'عند الاستيقاظ من النوم',
     items: [
       { text: 'الحمد لله الذي أحيانا بعد ما أماتنا وإ إليه النشور', count: 1, reward: 100 }
     ]
   },
   quran: {
-    title: 'أذكار تلاوة القرآن',
-    icon: '📖',
-    time: 'عند تلاوة القرآن',
+    title: 'أذكار تلاوة القرآن', icon: '📖', time: 'عند تلاوة القرآن',
     items: [
       { text: 'بسم الله الرحمن الرحيم', count: 1, reward: 10 },
       { text: 'اللهم ارحمني بالقرآن واجعله لي إماما ونورا وهدى ورحمة', count: 1, reward: 100 },
@@ -90,9 +335,7 @@ const ADHKAR = {
     ]
   },
   distress: {
-    title: 'أذكار الكرب',
-    icon: '🆘',
-    time: 'عند التكرب أو الخوف',
+    title: 'أذكار الكرب', icon: '🆘', time: 'عند التكرب أو الخوف',
     items: [
       { text: 'لا إله إلا الله العظيم الحليم، لا إله إلا الله رب العرش العظيم، لا إله إلا الله رب السماوات ورب الأرض ورب العرش العظيم', count: 1, reward: 100 },
       { text: 'اللهم رحمتك أرجو فلا تكلني إلى نفسي طرفة عين وأصلح لي شأني كله، لا إله إلا أنت', count: 3, reward: 300 },
@@ -100,43 +343,33 @@ const ADHKAR = {
     ]
   },
   travel: {
-    title: 'أذكار السفر',
-    icon: '✈️',
-    time: 'عند السفر',
+    title: 'أذكار السفر', icon: '✈️', time: 'عند السفر',
     items: [
       { text: 'سبحان الذي سخر لنا هذا وما كنا له مقرنين وإنا إلى ربنا لمنقلبون', count: 1, reward: 100 },
       { text: 'اللهم إنا نسألك في سفرنا هذا البر والتقوى، ومن العمل ما ترضى', count: 1, reward: 100 }
     ]
   },
   entering: {
-    title: 'أذكار الدخول',
-    icon: '🏠',
-    time: 'عند دخول المنزل',
+    title: 'أذكار الدخول', icon: '🏠', time: 'عند دخول المنزل',
     items: [
       { text: 'بسم الله ولجنا، بسم الله خرجنا، على الله ربنا توكلنا', count: 1, reward: 100 }
     ]
   },
   leaving: {
-    title: 'أذكار الخروج',
-    icon: '🚪',
-    time: 'عند الخروج من المنزل',
+    title: 'أذكار الخروج', icon: '🚪', time: 'عند الخروج من المنزل',
     items: [
       { text: 'بسم الله توكلت على الله ولا حول ولا قوة إلا بالله', count: 1, reward: 100 }
     ]
   },
   eating: {
-    title: 'أذكار الطعام',
-    icon: '🍽️',
-    time: 'قبل وبعد الطعام',
+    title: 'أذكار الطعام', icon: '🍽️', time: 'قبل وبعد الطعام',
     items: [
       { text: 'بسم الله (قبل الأكل)', count: 1, reward: 10 },
       { text: 'الحمد لله الذي أطعمني هذا ورزقنيه من غير حول مني ولا قوة', count: 1, reward: 100 }
     ]
   },
   mosque: {
-    title: 'أذكار المسجد',
-    icon: '🕌',
-    time: 'عند دخول المسجد',
+    title: 'أذكار المسجد', icon: '🕌', time: 'عند دخول المسجد',
     items: [
       { text: 'اللهم افتح لي أبواب رحمتك', count: 1, reward: 100 },
       { text: 'أعوذ بالله العظيم وبوجهه الكريم وسلطانه القديم من الشيطان الرجيم', count: 1, reward: 100 }
@@ -144,52 +377,31 @@ const ADHKAR = {
   }
 };
 
-// ==================== SEASONAL WORSHIP ====================
+// Seasonal worship
 const SEASONAL_WORSHIP = {
   ramadan: {
-    title: 'عبادات رمضان',
-    icon: '🌙',
-    months: [9], // Ramadan is 9th month
+    title: 'عبادات رمضان', icon: '🌙', months: [9],
     items: [
-      { title: 'قراءة القرآن كاملاً', description: 'ختم القرآن مرة على الأقل', icon: '📖', reward: 500 },
-      { title: 'صلاة التراويح', description: 'صلاة 20 ركعة كل ليلة', icon: '🕌', reward: 30 },
-      { title: 'الإفطار على الصائمين', description: 'إطعام صائم', icon: '🍽️', reward: 100 },
-      { title: 'الاعتكاف', description: 'البقاء في المسجد آخر 10 أيام', icon: '🕋', reward: 300 },
-      { title: 'ليلة القدر', description: 'البحث عن ليلة القدر في العشر الأواخر', icon: '⭐', reward: 1000 },
-      { title: 'الصدقة اليومية', description: 'إطعام مسكين كل يوم', icon: '💰', reward: 50 }
+      { title: 'قراءة القرآن كاملاً', description: 'ختم القرآن مرة على الأقل', icon: '📖', reward: 500, xp: 2000 },
+      { title: 'صلاة التراويح', description: 'صلاة 20 ركعة كل ليلة', icon: '🕌', reward: 30, xp: 100 },
+      { title: 'الإفطار على الصائمين', description: 'إطعام صائم', icon: '🍽️', reward: 100, xp: 300 },
+      { title: 'الاعتكاف', description: 'البقاء في المسجد آخر 10 أيام', icon: '🕋', reward: 300, xp: 1000 },
+      { title: 'ليلة القدر', description: 'البحث عن ليلة القدر في العشر الأواخر', icon: '⭐', reward: 1000, xp: 5000 },
+      { title: 'الصدقة اليومية', description: 'إطعام مسكين كل يوم', icon: '💰', reward: 50, xp: 200 }
     ]
   },
   dhulHijjah: {
-    title: 'عبادات ذي الحجة',
-    icon: '🕋',
-    months: [12],
+    title: 'عبادات ذي الحجة', icon: '🕋', months: [12],
     items: [
-      { title: 'صيام 9 ذي الحجة', description: 'صيام يوم عرفة وعشرة أيام', icon: '📅', reward: 200 },
-      { title: 'ذبح الأضحية', description: 'ذبح أضحية عيد الأضحى', icon: '🐑', reward: 150 },
-      { title: 'تكبير الله', description: 'تكبير من يوم عرفة إلى يوم النحر', icon: '📢', reward: 100 },
-      { title: 'دعاء عرفة', description: 'الدعاء في يوم عرفة', icon: '🤲', reward: 300 }
-    ]
-  },
-  muharram: {
-    title: 'عبادات محرم',
-    icon: '📅',
-    months: [1],
-    items: [
-      { title: 'صيام يوم عاشوراء', description: 'صيام التاسع والعاشر من محرم', icon: '🌙', reward: 100 },
-      { title: 'صيام يوم عرفة', description: 'صيام يوم عرفة يكفر ذنوب سنتين', icon: '📅', reward: 200 }
-    ]
-  },
-  shawwal: {
-    title: 'عبادات شوال',
-    icon: '🌙',
-    months: [10],
-    items: [
-      { title: 'صيام الستة أيام', description: 'صيام 6 أيام من شوال', icon: '📅', reward: 150 }
+      { title: 'صيام 9 ذي الحجة', description: 'صيام يوم عرفة وعشرة أيام', icon: '📅', reward: 200, xp: 500 },
+      { title: 'ذبح الأضحية', description: 'ذبح أضحية عيد الأضحى', icon: '🐑', reward: 150, xp: 400 },
+      { title: 'تكبير الله', description: 'تكبير من يوم عرفة إلى يوم النحر', icon: '📢', reward: 100, xp: 300 },
+      { title: 'دعاء عرفة', description: 'الدعاء في يوم عرفة', icon: '🤲', reward: 300, xp: 1000 }
     ]
   }
 };
 
-// ==================== QURAN SECTIONS ====================
+// Quran parts
 const QURAN_PARTS = [
   { id: 1, name: 'الجزء الأول', pages: '1-20', surahs: 'الفاتحة - البقرة' },
   { id: 2, name: 'الجزء الثاني', pages: '21-41', surahs: 'البقرة' },
@@ -222,37 +434,3 @@ const QURAN_PARTS = [
   { id: 29, name: 'الجزء التاسع والعشرون', pages: '563-582', surahs: 'ص - الزمر' },
   { id: 30, name: 'الجزء الثلاثون', pages: '583-604', surahs: 'غافر - الناس' }
 ];
-
-// ==================== DHUHR/ASR DIFFERENCES ====================
-// Some scholars say delay Asr slightly after its time begins
-// Some say to pray Sunnah Rawatib before/after
-
-// Daily Worship Checklist
-const DAILY_WORSHIP = {
-  faraid: {
-    title: 'الفرائض',
-    icon: '🕌',
-    items: [
-      { name: 'صلاة الفجر', prayer: 'fajr', sunnahBefore: 2, sunnahAfter: 0, fard: 2 },
-      { name: 'صلاة الظهر', prayer: 'dhuhr', sunnahBefore: 4, sunnahAfter: 2, fard: 4 },
-      { name: 'صلاة العصر', prayer: 'asr', sunnahBefore: 0, sunnahAfter: 0, fard: 4 },
-      { name: 'صلاة المغرب', prayer: 'maghrib', sunnahBefore: 0, sunnahAfter: 3, fard: 3 },
-      { name: 'صلاة العشاء', prayer: 'isha', sunnahBefore: 0, sunnahAfter: 2, fard: 4 }
-    ]
-  },
-  nawafil: {
-    title: 'النوافل',
-    icon: '⭐',
-    items: [
-      { name: 'صلاة الضحى', time: 'بعد شروق الشمس', rakat: 2, reward: 100 },
-      { name: 'صلاة الوتر', time: 'قبل الفجر', rakat: 3, reward: 200 },
-      { name: 'قيام الليل', time: 'الثلث الأخير من الليل', rakat: '2+', reward: 500 },
-      { name: 'صلاة التوبة', time: 'أي وقت', rakat: 2, reward: 100 }
-    ]
-  }
-};
-
-// Export all data
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { PRAYER_NAMES, ADHKAR, SEASONAL_WORSHIP, QURAN_PARTS, DAILY_WORSHIP };
-}

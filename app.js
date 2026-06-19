@@ -10,54 +10,6 @@ let state = {
   todayAdhkar: {}, todayQuran: 0
 };
 
-const LEVELS = [
-  { id: 1, title: "البداية المشرقة", duration: "30 دقيقة", reward: 10, color: ["#10B981", "#0D9488"], icon: "🌱", sections: [
-    { title: "القرآن", tasks: ["تلاوة صفحة", "الاستماع"] }, { title: "الصلاة", tasks: ["الصلوات الخمس", "صلاة الضحى"] },
-    { title: "الذكر", tasks: ["أذكار الصباح", "الاستغفار 100"] }, { title: "العلم", tasks: ["حديث نبوي", "قراءة كتاب"] }
-  ]},
-  { id: 2, title: "المسار المنتظم", duration: "60 دقيقة", reward: 30, color: ["#3B82F6", "#0891B2"], icon: "📚", sections: [
-    { title: "القرآن", tasks: ["جزء يومي", "حفظ آيتين", "تدبر"] }, { title: "الصلاة", tasks: ["مع السنن", "الضحى", "الوتر"] },
-    { title: "الذكر", tasks: ["أذكار الصباح والمساء", "الاستغفار 200"] }, { title: "العلم", tasks: ["15 دقيقة كتاب", "محاضرة"] }
-  ]},
-  { id: 3, title: "طالب العلم", duration: "90 دقيقة", reward: 60, color: ["#8B5CF6", "#DB2777"], icon: "🎓", sections: [
-    { title: "القرآن", tasks: ["جزء يومي", "حفظ نصف صفحة"] }, { title: "الصلاة", tasks: ["الجماعة", "قيام الليل"] },
-    { title: "الذكر", tasks: ["أذكار اليوم", "الاستغفار 300"] }, { title: "العلم", tasks: ["30 دقيقة كتاب", "درس"] }
-  ]},
-  { id: 4, title: "المجتهد", duration: "2-3 ساعات", reward: 120, color: ["#F97316", "#DC2626"], icon: "⚡", sections: [
-    { title: "القرآن", tasks: ["جزأين", "صفحة كاملة"] }, { title: "الصلاة", tasks: ["تبكير", "الضحى 6", "قيام 4"] },
-    { title: "الذكر", tasks: ["أذكار بالإكثار", "الاستغفار 500"] }, { title: "العلم", tasks: ["ساعة كتاب", "درس مع شيخ"] }
-  ]},
-  { id: 5, title: "الهمة العالية", duration: "3-5 ساعات", reward: 200, color: ["#EF4444", "#E11D48"], icon: "👑", sections: [
-    { title: "القرآن", tasks: ["3-5 أجزاء", "صفحتين"] }, { title: "الصلاة", tasks: ["قيام نصف الليل", "الضحى 8"] },
-    { title: "الذكر", tasks: ["أذكار بالإكثار", "الاستغفار 1000"] }, { title: "العلم", tasks: ["ساعتان", "حلقات علم"] }
-  ]}
-];
-
-const ACHIEVEMENTS = [
-  { id: "first-day", title: "أول يوم", icon: "🌟", gems: 10, check: s => s.totalDays >= 1 },
-  { id: "streak-7", title: "سلسلة أسبوع", icon: "🔥", gems: 100, check: s => s.streak >= 7 },
-  { id: "streak-30", title: "سلسلة شهر", icon: "🔥", gems: 500, check: s => s.streak >= 30 },
-  { id: "all-prayers", title: "الصلوات الخمس", icon: "🕌", gems: 50, check: s => (s.todayPrayers ? Object.keys(s.todayPrayers).length : 0) >= 5 },
-  { id: "dhikr-master", title: "سيد الذكر", icon: "📿", gems: 100, check: s => s.totalDhikr >= 1000 },
-  { id: "quran-hafiz", title: "حافظ القرآن", icon: "📖", gems: 500, check: s => s.totalQuran >= 604 }
-];
-
-const DAILY_WORSHIP = {
-  faraid: [
-    { name: 'الفجر', key: 'fajr', icon: '🌅', fard: 2, sunnahQabliyyah: 2, sunnahBaadiyyah: 0 },
-    { name: 'الظهر', key: 'dhuhr', icon: '☀️', fard: 4, sunnahQabliyyah: 4, sunnahBaadiyyah: 2 },
-    { name: 'العصر', key: 'asr', icon: '🌤️', fard: 4, sunnahQabliyyah: 0, sunnahBaadiyyah: 0 },
-    { name: 'المغرب', key: 'maghrib', icon: '🌅', fard: 3, sunnahQabliyyah: 0, sunnahBaadiyyah: 3 },
-    { name: 'العشاء', key: 'isha', icon: '🌙', fard: 4, sunnahQabliyyah: 0, sunnahBaadiyyah: 2 }
-  ],
-  nawafil: [
-    { name: 'الضحى', key: 'duha', icon: '⭐', rakat: 2, time: 'بعد شروق الشمس' },
-    { name: 'الوتر', key: 'witr', icon: '🌙', rakat: 3, time: 'قبل الفجر' }
-  ]
-};
-
-let currentLevelId = 1;
-
 // ==================== UTILITY ====================
 function generateCode() { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let r = ''; for (let i = 0; i < 8; i++) r += c[Math.floor(Math.random() * c.length)]; return r; }
 function getToday() { return new Date().toISOString().split('T')[0]; }
@@ -195,8 +147,10 @@ function renderTracker() {
   level.sections.forEach(section => {
     html += `<div class="task-section"><div class="task-section-title">${section.title}</div>`;
     section.tasks.forEach(task => {
+      const taskText = typeof task === 'string' ? task : task.text;
+      const taskXP = typeof task === 'string' ? 10 : (task.xp || 10);
       const done = state.todayTasks.includes(taskId);
-      html += `<div class="task-item ${done ? 'completed' : ''}" onclick="toggleTask(${taskId})"><div class="task-checkbox">${done ? '✓' : ''}</div><div class="task-text">${task}</div></div>`;
+      html += `<div class="task-item ${done ? 'completed' : ''}" onclick="toggleTask(${taskId})"><div class="task-checkbox">${done ? '✓' : ''}</div><div class="task-text">${taskText}</div><div style="font-size:11px;color:var(--primary);font-weight:700;white-space:nowrap;margin-right:8px;">+${taskXP} XP</div></div>`;
       taskId++;
     });
     html += `</div>`;
@@ -207,8 +161,36 @@ function renderTracker() {
 
 function toggleTask(taskId) {
   const idx = state.todayTasks.indexOf(taskId);
-  if (idx === -1) { state.todayTasks.push(taskId); playSound('click'); } else state.todayTasks.splice(idx, 1);
-  saveState(); renderTracker();
+  if (idx === -1) {
+    state.todayTasks.push(taskId);
+    // Earn XP for the task
+    const level = LEVELS.find(l => l.id === state.level);
+    let taskIdCounter = 0;
+    for (const section of level.sections) {
+      for (const task of section.tasks) {
+        if (taskIdCounter === taskId) {
+          const taskXP = typeof task === 'string' ? 10 : (task.xp || 10);
+          state.xp = (state.xp || 0) + taskXP;
+          // Auto-level up based on XP
+          const newLevel = calculateLevel(state.xp);
+          if (newLevel > state.level) {
+            state.level = newLevel;
+            state.gems += LEVELS[newLevel - 1].reward;
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification('🎉 ترقية!', { body: `تهانينا! وصلت المستوى ${newLevel}`, icon: 'icons/icon-192.png' });
+            }
+          }
+          break;
+        }
+        taskIdCounter++;
+      }
+      if (taskIdCounter > taskId) break;
+    }
+    playSound('click');
+  } else {
+    state.todayTasks.splice(idx, 1);
+  }
+  saveState(); renderTracker(); updateHeaderGems();
 }
 
 function updateProgress() {
