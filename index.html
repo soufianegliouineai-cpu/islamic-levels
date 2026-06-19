@@ -9,7 +9,6 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="styles.css">
-  <link rel="preconnect" href="https://api.aladhan.com">
 </head>
 <body>
   <!-- Auth Modal -->
@@ -37,16 +36,16 @@
     </div>
   </div>
 
-  <!-- Main App -->
   <div id="appContainer" style="display: none;">
     <header class="header">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
           <h1>🌟 المستويات الإيمانية</h1>
-          <p id="headerSubtitle" style="font-size: 13px;">جاري تحميل مواقيت الصلاة...</p>
+          <p id="headerSubtitle" style="font-size: 13px;">جاري تحميل المواقيت...</p>
         </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <span style="font-size: 20px; font-weight: 900; color: #F59E0B;">💎 <span id="headerGems">0</span></span>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <span style="font-size: 14px; font-weight: 900; color: #F59E0B;">⭐ <span id="headerXP">0</span></span>
+          <span style="font-size: 14px; font-weight: 900; color: #F59E0B;">💎 <span id="headerGems">0</span></span>
           <button onclick="showScreen('profile')" style="background: rgba(255,255,255,0.2); border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer;">👤</button>
         </div>
       </div>
@@ -62,7 +61,7 @@
             <div style="font-size: 14px; opacity: 0.9;" id="nextPrayerTime">-</div>
           </div>
           <div style="text-align: center;">
-            <div style="font-size: 12px; opacity: 0.9;">الوقت المتبقي</div>
+            <div style="font-size: 12px; opacity: 0.9;">المتبقي</div>
             <div style="font-size: 28px; font-weight: 900;" id="timeUntilPrayer">-</div>
           </div>
         </div>
@@ -74,12 +73,37 @@
         <div style="font-size: 13px; color: var(--text-muted);" id="gregorianDate">-</div>
       </div>
 
+      <!-- Seasonal Banner -->
+      <div class="card" id="seasonalBanner" style="display: none; margin-bottom: 16px; background: linear-gradient(135deg, #F59E0B, #D97706); color: white; text-align: center;">
+        <div style="font-size: 20px; font-weight: 900;" id="seasonalTitle">🌙</div>
+        <div style="font-size: 14px; opacity: 0.9;" id="seasonalDesc">عبادات موسمية</div>
+      </div>
+
       <!-- Home -->
       <section class="screen active" id="homeScreen">
-        <div style="text-align: center; margin-bottom: 20px;">
+        <div style="text-align: center; margin-bottom: 16px;">
           <p style="font-size: 17px; font-weight: 700;">🎯 اختر المستوى المناسب لك!</p>
         </div>
         <div id="levelsContainer"></div>
+        <!-- Quick Actions -->
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 16px;">
+          <div class="card" style="text-align: center; cursor: pointer; padding: 16px;" onclick="showScreen('tasbih')">
+            <div style="font-size: 32px; margin-bottom: 8px;">📿</div>
+            <div style="font-weight: 700; font-size: 14px;">السبحة</div>
+          </div>
+          <div class="card" style="text-align: center; cursor: pointer; padding: 16px;" onclick="showScreen('qibla')">
+            <div style="font-size: 32px; margin-bottom: 8px;">🧭</div>
+            <div style="font-weight: 700; font-size: 14px;">اتجاه القبلة</div>
+          </div>
+          <div class="card" style="text-align: center; cursor: pointer; padding: 16px;" onclick="showScreen('dua')">
+            <div style="font-size: 32px; margin-bottom: 8px;">🤲</div>
+            <div style="font-weight: 700; font-size: 14px;">الأدعية</div>
+          </div>
+          <div class="card" style="text-align: center; cursor: pointer; padding: 16px;" onclick="showScreen('goals')">
+            <div style="font-size: 32px; margin-bottom: 8px;">🎯</div>
+            <div style="font-weight: 700; font-size: 14px;">أهدافي</div>
+          </div>
+        </div>
       </section>
 
       <!-- Tracker -->
@@ -103,11 +127,9 @@
 
       <!-- Prayer Tracker -->
       <section class="screen" id="prayerScreen">
-        <div class="card" style="background: linear-gradient(135deg, #10B981, #059669); color: white; margin-bottom: 16px;">
-          <div style="text-align: center;">
-            <div style="font-size: 20px; font-weight: 900;">🕌 تتبع الصلوات</div>
-            <div style="font-size: 14px; opacity: 0.9; margin-top: 4px;" id="prayerDate">-</div>
-          </div>
+        <div class="card" style="background: linear-gradient(135deg, #10B981, #059669); color: white; margin-bottom: 16px; text-align: center;">
+          <div style="font-size: 20px; font-weight: 900;">🕌 تتبع الصلوات</div>
+          <div style="font-size: 14px; opacity: 0.9; margin-top: 4px;" id="prayerDate">-</div>
         </div>
         <div id="prayerTrackerContainer"></div>
         <div class="card" style="margin-top: 16px;">
@@ -118,92 +140,100 @@
         </div>
       </section>
 
+      <!-- Tasbih (Digital Counter) -->
+      <section class="screen" id="tasbihScreen">
+        <div class="card" style="background: linear-gradient(135deg, #8B5CF6, #DB2777); color: white; margin-bottom: 16px; text-align: center;">
+          <div style="font-size: 20px; font-weight: 900;">📿 السبحة الرقمية</div>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div style="font-size: 16px; font-weight: 700; margin-bottom: 16px;" id="tasbihText">سبحان الله وبحمده</div>
+          <div id="tasbihCounter" style="font-size: 72px; font-weight: 900; color: var(--primary); margin: 20px 0; cursor: pointer; user-select: none; transition: transform 0.1s;" onclick="incrementTasbih()">0</div>
+          <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">الهدف: <span id="tasbihTarget">33</span></div>
+          <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap;">
+            <button class="btn btn-primary" style="width: auto; padding: 8px 16px; font-size: 13px;" onclick="resetTasbih()">🔄 إعادة</button>
+            <button class="btn" style="width: auto; padding: 8px 16px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('سبحان الله وبحمده')">سبحان الله</button>
+            <button class="btn" style="width: auto; padding: 8px 16px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('الحمد لله')">الحمد لله</button>
+            <button class="btn" style="width: auto; padding: 8px 16px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('الله أكبر')">الله أكبر</button>
+            <button class="btn" style="width: auto; padding: 8px 16px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('أستغفر الله')">أستغفر الله</button>
+            <button class="btn" style="width: auto; padding: 8px 16px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('لا إله إلا الله')">لا إله إلا الله</button>
+          </div>
+          <div style="font-size: 14px; font-weight: 700;">الإجمالي اليوم: <span id="tasbihTotal" style="color: var(--primary);">0</span></div>
+        </div>
+      </section>
+
+      <!-- Qibla Direction -->
+      <section class="screen" id="qiblaScreen">
+        <div class="card" style="background: linear-gradient(135deg, #F59E0B, #D97706); color: white; margin-bottom: 16px; text-align: center;">
+          <div style="font-size: 20px; font-weight: 900;">🧭 اتجاه القبلة</div>
+        </div>
+        <div class="card" style="text-align: center; padding: 40px;">
+          <div id="qiblaCompass" style="width: 200px; height: 200px; border-radius: 50%; border: 4px solid var(--primary); margin: 0 auto 20px; position: relative; transition: transform 0.5s;">
+            <div style="position: absolute; top: -30px; left: 50%; transform: translateX(-50%); font-size: 24px;"> NORTH</div>
+            <div style="position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); font-size: 24px;"> SOUTH</div>
+            <div style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); font-size: 24px;"> WEST</div>
+            <div style="position: absolute; right: -30px; top: 50%; transform: translateY(-50%); font-size: 24px;"> EAST</div>
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">🕋</div>
+          </div>
+          <div style="font-size: 18px; font-weight: 800;" id="qiblaDirection">جاري تحديد الاتجاه...</div>
+          <div style="font-size: 14px; color: var(--text-muted); margin-top: 8px;" id="qiblaAngle">-</div>
+          <button class="btn btn-primary" style="margin-top: 16px;" onclick="startQibla()">📍 تحديث الموقع</button>
+        </div>
+      </section>
+
+      <!-- Dua Book -->
+      <section class="screen" id="duaScreen">
+        <div class="card" style="background: linear-gradient(135deg, #10B981, #059669); color: white; margin-bottom: 16px; text-align: center;">
+          <div style="font-size: 20px; font-weight: 900;">🤲 ديوان الأدعية</div>
+        </div>
+        <div id="duaCategories"></div>
+      </section>
+
+      <!-- Goals -->
+      <section class="screen" id="goalsScreen">
+        <div class="card" style="background: linear-gradient(135deg, #EF4444, #DC2626); color: white; margin-bottom: 16px; text-align: center;">
+          <div style="font-size: 20px; font-weight: 900;">🎯 أهدافي اليومية</div>
+        </div>
+        <div id="goalsContainer"></div>
+        <button class="btn btn-primary" style="margin-top: 16px;" onclick="addGoal()">➕ هدف جديد</button>
+      </section>
+
       <!-- Adhkar -->
       <section class="screen" id="adhkarScreen">
+        <div class="card" style="background: linear-gradient(135deg, #8B5CF6, #DB2777); color: white; margin-bottom: 16px; text-align: center;">
+          <div style="font-size: 20px; font-weight: 900;">📿 الأذكار</div>
+        </div>
         <div id="adhkarCategories"></div>
         <div id="adhkarItems" style="display: none;"></div>
       </section>
 
       <!-- Quran -->
       <section class="screen" id="quranScreen">
-        <div class="card" style="background: linear-gradient(135deg, #8B5CF6, #DB2777); color: white; margin-bottom: 16px;">
-          <div style="text-align: center;">
-            <div style="font-size: 20px; font-weight: 900;">📖 القرآن الكريم</div>
-            <div style="font-size: 14px; opacity: 0.9; margin-top: 4px;">30 جزء - حفظ وتلاوة</div>
-          </div>
+        <div class="card" style="background: linear-gradient(135deg, #10B981, #059669); color: white; margin-bottom: 16px; text-align: center;">
+          <div style="font-size: 20px; font-weight: 900;">📖 القرآن الكريم</div>
         </div>
         <div id="quranPartsContainer"></div>
-      </section>
-
-      <!-- Seasonal -->
-      <section class="screen" id="seasonalScreen">
-        <div id="seasonalContent"></div>
-      </section>
-
-      <!-- Family -->
-      <section class="screen" id="familyScreen"><div id="familyContent"></div></section>
-
-      <!-- Share -->
-      <section class="screen" id="shareScreen">
-        <div class="card" style="background: var(--primary); color: white; text-align: center;">
-          <div style="font-size: 24px;">🌟 شارك رحلتك!</div>
-        </div>
-        <div class="card">
-          <div style="font-weight: 800; margin-bottom: 12px;">كود الدعوة</div>
-          <div style="display: flex; gap: 8px;">
-            <input type="text" id="referralCode" readonly style="flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 10px; font-size: 18px; font-weight: 800; text-align: center; background: var(--bg);" />
-            <button class="btn btn-primary" style="width: auto; padding: 12px 20px;" onclick="copyReferralCode()">📋</button>
-          </div>
-        </div>
-        <div class="share-grid">
-          <button class="share-btn" onclick="shareWhatsApp()"><div class="share-icon" style="background: #25D366;">💬</div><div class="share-name">واتساب</div></button>
-          <button class="share-btn" onclick="shareTwitter()"><div class="share-icon" style="background: #000;">𝕏</div><div class="share-name">تويتر</div></button>
-          <button class="share-btn" onclick="shareTelegram()"><div class="share-icon" style="background: #0088cc;">✈️</div><div class="share-name">تليجرام</div></button>
-          <button class="share-btn" onclick="shareNative()"><div class="share-icon" style="background: var(--primary);">📤</div><div class="share-name">مشاركة</div></button>
-        </div>
-      </section>
-
-      <!-- Analytics -->
-      <section class="screen" id="analyticsScreen">
-        <div class="card">
-          <div style="font-weight: 800; margin-bottom: 12px; text-align: right;">📊 إحصائيات</div>
-          <div class="analytics-grid">
-            <div class="analytics-item"><div class="analytics-value" style="color: var(--primary);" id="totalPrayers">0</div><div class="analytics-label">صلاة</div></div>
-            <div class="analytics-item"><div class="analytics-value" style="color: #10B981;" id="totalQuran">0</div><div class="analytics-label">صفحة قرآن</div></div>
-            <div class="analytics-item"><div class="analytics-value" style="color: #F59E0B;" id="totalDhikr">0</div><div class="analytics-label">ذِكر</div></div>
-            <div class="analytics-item"><div class="analytics-value" style="color: #EF4444;" id="totalDays">0</div><div class="analytics-label">يوم مكتمل</div></div>
-          </div>
-        </div>
-        <div class="card"><div style="font-weight: 800; margin-bottom: 12px; text-align: right;">📈 النشاط</div><div class="activity-chart" id="activityChart"></div></div>
-      </section>
-
-      <!-- Profile -->
-      <section class="screen" id="profileScreen">
-        <div class="card" style="text-align: center;">
-          <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #EC4899); margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 36px; color: white;" id="profileAvatar">👤</div>
-          <h3 style="font-weight: 800;" id="profileName">المستخدم</h3>
-          <p style="color: var(--text-muted); font-size: 14px;" id="profileEmail">-</p>
-          <div style="display: flex; justify-content: center; gap: 16px; margin-top: 16px;">
-            <div style="text-align: center;"><div style="font-weight: 900; font-size: 24px; color: var(--primary);" id="profileLevel">1</div><div style="font-size: 12px; color: var(--text-muted);">المستوى</div></div>
-            <div style="text-align: center;"><div style="font-weight: 900; font-size: 24px; color: #F59E0B;" id="profileGems">0</div><div style="font-size: 12px; color: var(--text-muted);">جواهر</div></div>
-            <div style="text-align: center;"><div style="font-weight: 900; font-size: 24px; color: #F97316;" id="profileStreak">0</div><div style="font-size: 12px; color: var(--text-muted);">سلسلة</div></div>
-          </div>
-        </div>
-        <div class="card"><div style="font-weight: 800; margin-bottom: 12px;">📤 تصدير البيانات</div><button class="btn btn-primary" onclick="exportData()">تصدير JSON</button></div>
-        <button class="btn btn-primary" style="background: var(--danger);" onclick="logout()">🚪 تسجيل الخروج</button>
       </section>
 
       <!-- Settings -->
       <section class="screen" id="settingsScreen">
         <div class="card">
-          <div style="font-weight: 800; margin-bottom: 16px;">الإعدادات</div>
+          <div style="font-weight: 800; margin-bottom: 16px;">⚙️ الإعدادات</div>
           <div class="toggle-row"><span class="toggle-label">🌙 الوضع الليلي</span><div class="toggle" id="darkModeToggle" onclick="toggleDarkMode()"></div></div>
           <div class="toggle-row"><span class="toggle-label">🔔 إشعارات الصلاة</span><div class="toggle" id="notifToggle" onclick="toggleNotifications()"></div></div>
           <div class="toggle-row"><span class="toggle-label">🔊 الصوت</span><div class="toggle" id="soundToggle" onclick="toggleSound()"></div></div>
           <div class="toggle-row"><span class="toggle-label">📍 مواقيت الصلاة</span><div class="toggle" id="prayerTimesToggle" onclick="togglePrayerTimes()"></div></div>
+          <div class="toggle-row"><span class="toggle-label">📿 السبحة بالاهتزاز</span><div class="toggle" id="vibrationToggle" onclick="toggleVibration()"></div></div>
         </div>
-        <div class="card"><div style="font-weight: 800; margin-bottom: 12px;">المستوى</div><div style="display: flex; gap: 8px; flex-wrap: wrap;" id="levelSelector"></div></div>
-        <button class="btn btn-primary" onclick="resetData()" style="background: var(--danger);">🗑️ مسح البيانات</button>
+        <div class="card" style="margin-top: 12px;">
+          <div style="font-weight: 800; margin-bottom: 12px;">📤 البيانات</div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-primary" style="flex: 1;" onclick="exportData()">تصدير</button>
+            <button class="btn btn-success" style="flex: 1;" onclick="importData()">استيراد</button>
+          </div>
+        </div>
+        <div class="card" style="margin-top: 12px; text-align: center;">
+          <div style="font-size: 12px; color: var(--text-muted);">الإصدار 2.0 — مجاني بالكامل ❤️</div>
+        </div>
       </section>
     </main>
 

@@ -772,6 +772,25 @@ body {
   margin-bottom: 16px;
 }
 
+/* Tasbih */
+#tasbihCounter {
+  transition: transform 0.1s;
+}
+
+#tasbihCounter:active {
+  transform: scale(1.1);
+}
+
+/* Qibla */
+#qiblaCompass {
+  transition: transform 0.5s ease;
+}
+
+/* Goals */
+.goal-card {
+  border-left: 4px solid var(--primary);
+}
+
 /* Responsive */
 @media (max-width: 400px) {
   .stats-grid, .analytics-grid {
