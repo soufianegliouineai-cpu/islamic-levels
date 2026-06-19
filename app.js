@@ -1045,5 +1045,38 @@ function renderCommunity() {
 }
 
 // ==================== INIT ====================
-function showApp() { document.getElementById('authModal').style.display = 'none'; document.getElementById('appContainer').style.display = 'block'; document.getElementById('headerSubtitle').textContent = 'مرحباً، ' + (authState.user?.name || 'ضيف') + '!'; renderLevels(); updateHeaderGems(); if (state.prayerTimesEnabled) initPrayerTimes(); if (state.equippedTheme) applyTheme(state.equippedTheme); setInterval(updatePrayerBanner, 60000); setTimeout(initSupabase, 1000); }
-document.addEventListener('DOMContentLoaded', () => { const savedAuth = localStorage.getItem('islamicAuth'); if (savedAuth) { authState = JSON.parse(savedAuth); if (authState.isLoggedIn) { loadState(); showApp(); return; } } loadState(); document.getElementById('authModal').style.display = 'flex'; });
+function showApp() {
+  // Hide splash screen with animation
+  const splash = document.getElementById('splashScreen');
+  if (splash) {
+    splash.style.opacity = '0';
+    setTimeout(() => splash.style.display = 'none', 500);
+  }
+  
+  document.getElementById('authModal').style.display = 'none';
+  document.getElementById('appContainer').style.display = 'block';
+  document.getElementById('headerSubtitle').textContent = 'مرحباً، ' + (authState.user?.name || 'ضيف') + '!';
+  renderLevels();
+  updateHeaderGems();
+  if (state.prayerTimesEnabled) initPrayerTimes();
+  if (state.equippedTheme) applyTheme(state.equippedTheme);
+  setInterval(updatePrayerBanner, 60000);
+  if (typeof seasonalManager !== 'undefined') seasonalManager.load();
+  if (typeof communityManager !== 'undefined') communityManager.load();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Hide splash after 2 seconds
+  setTimeout(() => {
+    const splash = document.getElementById('splashScreen');
+    if (splash) {
+      splash.style.opacity = '0';
+      setTimeout(() => splash.style.display = 'none', 500);
+    }
+  }, 2000);
+  
+  const savedAuth = localStorage.getItem('islamicAuth');
+  if (savedAuth) { authState = JSON.parse(savedAuth); if (authState.isLoggedIn) { loadState(); showApp(); return; } }
+  loadState();
+  document.getElementById('authModal').style.display = 'flex';
+});
