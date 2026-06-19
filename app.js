@@ -93,6 +93,60 @@ const SHOP_CATEGORIES = {
 function convertGemsToMad(gems) { return Math.floor(gems * GEM_TO_MAD_RATE); }
 function convertMadToGems(mad) { return Math.ceil(mad / GEM_TO_MAD_RATE); }
 
+const DUAS = {
+  morning: {
+    title: 'أدعية الصباح', icon: '☀️',
+    items: [
+      { text: 'اللهم بك أصبحنا وبك أمسينا، وبك نحيا وبك نموت وإليك النشور', occasion: 'عند الاستيقاظ' },
+      { text: 'اللهم إني أسألك العافية في الدنيا والآخرة', occasion: 'صباح كل يوم' },
+      { text: 'بسم الله الذي لا يضر مع اسمه شيء في الأرض ولا في السماء وهو السميع العليم', occasion: '3 مرات' },
+      { text: 'سبحان الله وبحمده', occasion: '100 مرة' },
+      { text: 'الحمد لله', occasion: '100 مرة' },
+      { text: 'الله أكبر', occasion: '100 مرة' },
+      { text: 'لا إله إلا الله وحده لا شريك له', occasion: '100 مرة' },
+      { text: 'أستغفر الله وأتوب إليه', occasion: '100 مرة' }
+    ]
+  },
+  evening: {
+    title: 'أدعية المساء', icon: '🌙',
+    items: [
+      { text: 'اللهم بك أمسينا وبك أصبحنا، وبك نحيا وبك نموت وإليك المحشور', occasion: 'عند النوم' },
+      { text: 'أستغفر الله العظيم الذي لا إله إلا هو الحي القيوم وأتوب إليه', occasion: '100 مرة' },
+      { text: 'بسم الله الذي لا يضر مع اسمه شيء في الأرض ولا في السماء', occasion: '3 مرات' },
+      { text: 'أعوذ بكلمات الله التامات من شر ما خلق', occasion: '3 مرات' },
+      { text: 'اللهم إني أسألك العافية في الدنيا والآخرة', occasion: '3 مرات' }
+    ]
+  },
+  food: {
+    title: 'أدعية الطعام', icon: '🍽️',
+    items: [
+      { text: 'بسم الله', occasion: 'قبل الأكل' },
+      { text: 'الحمد لله الذي أطعمني هذا ورزقنيه من غير حول مني ولا قوة', occasion: 'بعد الأكل' }
+    ]
+  },
+  travel: {
+    title: 'أدعية السفر', icon: '✈️',
+    items: [
+      { text: 'سبحان الذي سخر لنا هذا وما كنا له مقرنين وإنا إلى ربنا لمنقلبون', occasion: 'عند السفر' },
+      { text: 'اللهم إنا نسألك في سفرنا هذا البر والتقوى، ومن العمل ما ترضى', occasion: 'عند السفر' }
+    ]
+  },
+  sleep: {
+    title: 'أدعية النوم', icon: '😴',
+    items: [
+      { text: 'باسمك اللهم أموت وأحيا', occasion: 'قبل النوم' },
+      { text: 'اللهم قني عذابك يوم تبعث عبادك', occasion: 'قبل النوم' }
+    ]
+  },
+  distress: {
+    title: 'أدعية الكرب', icon: '🆘',
+    items: [
+      { text: 'لا إله إلا الله العظيم الحليم، لا إله إلا الله رب العرش العظيم', occasion: 'عند الكرب' },
+      { text: 'حسبي الله ونعم الوكيل', occasion: '7 مرات' }
+    ]
+  }
+};
+
 // ==================== UTILITY ====================
 function generateCode() { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let r = ''; for (let i = 0; i < 8; i++) r += c[Math.floor(Math.random() * c.length)]; return r; }
 function getToday() { return new Date().toISOString().split('T')[0]; }
@@ -242,28 +296,83 @@ function changeTasbihText(text) { state.tasbihText = text; state.tasbihCount = 0
 // ==================== SHOP ====================
 let currentShopCategory = 'dailyRewards';
 function renderShop() { document.getElementById('shopGems').textContent = state.gems; showShopCategory(currentShopCategory); }
+
 function showShopCategory(cat) {
   currentShopCategory = cat;
   document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
   const activeTab = document.querySelector('[data-cat="' + cat + '"]');
   if (activeTab) activeTab.classList.add('active');
+  
   const category = SHOP_CATEGORIES[cat];
   if (!category) return;
+  
   let html = '';
+  
+  // Daily rewards special section
   if (cat === 'dailyRewards') {
     html += '<div class="card" style="margin-bottom: 12px; background: linear-gradient(135deg, #F59E0B, #D97706); color: white; text-align: center;">';
     html += '<div style="font-size: 16px; font-weight: 800;">🔥 سلسلة تسجيل الدخول: ' + state.loginStreak + ' أيام</div>';
-    html += '<button class="btn" style="width: auto; padding: 10px 20px; margin-top: 12px; background: white; color: #D97706; font-weight: 800;" onclick="claimDailyReward()">' + (state.dailyRewardClaimed ? '✅ تم' : '🎁 احصل على مكافأتك') + '</button></div>';
+    html += '<button class="btn" style="width: auto; padding: 10px 20px; margin-top: 12px; background: white; color: #D97706; font-weight: 800;" onclick="claimDailyReward()">' + (state.dailyRewardClaimed ? '✅ تم الإعداد' : '🎁 احصل على مكافأتك') + '</button></div>';
   }
+  
   category.items.forEach(item => {
     const owned = state.purchasedItems.includes(item.id);
-    const equipped = (item.type === 'avatar' && state.equippedAvatar === item.id) || (item.type === 'theme' && state.equippedTheme === item.id) || (item.type === 'badge' && state.equippedBadge === item.id);
+    const equipped = (item.type === 'avatar' && state.equippedAvatar === item.id) || 
+                     (item.type === 'theme' && state.equippedTheme === item.id) || 
+                     (item.type === 'badge' && state.equippedBadge === item.id);
     const canBuy = (item.price === 0 || state.gems >= item.price) && !owned;
-    html += '<div class="card" style="margin-bottom: 12px; border-color: ' + (equipped ? 'var(--success)' : 'var(--border)') + ';"><div style="display: flex; align-items: center; gap: 12px;"><div style="width: 50px; height: 50px; border-radius: 12px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 28px;">' + item.icon + '</div><div style="flex: 1;"><div style="font-weight: 800;">' + item.name + '</div><div style="font-size: 12px; color: var(--text-muted);">' + item.desc + '</div></div><div style="text-align: center;">';
-    if (owned) { html += equipped ? '<span style="color: var(--success); font-weight: 800;">✓ مُلبس</span>' : '<button class="btn btn-primary" style="width: auto; padding: 6px 12px; font-size: 11px;" onclick="equipItem(\'' + item.id + '\', \'' + item.type + '\')">لبس</button>'; }
-    else { html += '<div style="font-weight: 800; color: #F59E0B;">💎 ' + (item.price || 'مجاني') + '</div><button class="btn ' + (canBuy ? 'btn-success' : '') + '" style="width: auto; padding: 6px 12px; font-size: 11px; ' + (!canBuy ? 'opacity: 0.5;' : '') + '" onclick="buyItem(\'' + item.id + '\', ' + item.price + ', \'' + item.type + '\', \'' + (item.effect || '') + '\')" ' + (!canBuy ? 'disabled' : '') + '>شراء</button>'; }
-    html += '</div></div></div>';
+    
+    // Determine button text and action
+    let buttonText = '';
+    let buttonAction = '';
+    let buttonStyle = '';
+    
+    if (cat === 'dailyRewards') {
+      // Daily rewards - always "ادعاء" (claim)
+      buttonText = '🎁 ادعاء';
+      buttonAction = 'claimDailyReward()';
+      buttonStyle = 'background: linear-gradient(135deg, #10B981, #059669); color: white;';
+    } else if (owned) {
+      if (equipped) {
+        buttonText = '✅ مُلبس';
+        buttonAction = '';
+        buttonStyle = 'background: #10B981; color: white;';
+      } else {
+        buttonText = 'لبس';
+        buttonAction = "equipItem('" + item.id + "', '" + item.type + "')";
+        buttonStyle = 'background: #8B5CF6; color: white;';
+      }
+    } else {
+      // Not owned - show price and buy button
+      if (item.price === 0) {
+        buttonText = 'مجاني - احصل عليه';
+        buttonAction = "buyItem('" + item.id + "', 0, '" + item.type + "', '" + (item.effect || '') + "')";
+        buttonStyle = 'background: #10B981; color: white;';
+      } else if (canBuy) {
+        buttonText = 'شراء - ' + item.price + ' 💎';
+        buttonAction = "buyItem('" + item.id + "', " + item.price + ", '" + item.type + "', '" + (item.effect || '') + "')";
+        buttonStyle = 'background: #8B5CF6; color: white;';
+      } else {
+        buttonText = '💰 ' + item.price + ' جوهرة';
+        buttonAction = '';
+        buttonStyle = 'background: #D1D5DB; color: #6B7280;';
+      }
+    }
+    
+    html += '<div class="card" style="margin-bottom: 12px; border-color: ' + (equipped ? '#10B981' : '#E5E7EB') + '; border-width: ' + (equipped ? '2px' : '1px') + ';">';
+    html += '<div style="display: flex; align-items: center; gap: 12px;">';
+    html += '<div style="width: 50px; height: 50px; border-radius: 12px; background: #F3F4F6; display: flex; align-items: center; justify-content: center; font-size: 28px;">' + item.icon + '</div>';
+    html += '<div style="flex: 1; text-align: right;">';
+    html += '<div style="font-weight: 800;">' + item.name + '</div>';
+    html += '<div style="font-size: 12px; color: #6B7280;">' + item.desc + '</div>';
+    if (item.price > 0 && !owned) {
+      html += '<div style="font-size: 13px; color: #F59E0B; font-weight: 700; margin-top: 2px;">💎 ' + item.price + '</div>';
+    }
+    html += '</div>';
+    html += '<button class="btn" style="' + buttonStyle + ' width: auto; padding: 8px 16px; font-size: 13px; font-weight: 700; border-radius: 10px;" ' + (buttonAction ? 'onclick="' + buttonAction + '"' : 'disabled') + '>' + buttonText + '</button>';
+    html += '</div></div>';
   });
+  
   document.getElementById('shopItemsContainer').innerHTML = html;
 }
 function buyItem(itemId, price, type, effect) {
@@ -497,7 +606,7 @@ function openChat(memberId) {
   const member = familyManager.getMember(memberId);
   if (!member) return;
   
-  const myId = state.childId || state.parentId;
+  const myId = state.currentMemberId || familyManager.members.find(m => m.isOnline)?.id || state.childId || state.parentId;
   const msgs = familyManager.getMessages(myId, memberId);
   
   let html = '<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">';
@@ -528,7 +637,9 @@ function sendMessage(memberId) {
   if (!input || !input.value.trim()) return;
   
   if (familyManager) {
-    familyManager.sendMessage(state.childId || state.parentId, memberId, input.value.trim());
+    // Use currentMemberId or determine the sender from family
+    const myId = state.currentMemberId || familyManager.members.find(m => m.isOnline)?.id || state.childId || state.parentId;
+    familyManager.sendMessage(myId, memberId, input.value.trim());
     openChat(memberId);
   }
 }
@@ -554,7 +665,20 @@ function logQuran(partId) { state.totalQuran += 20; state.gems += 10; state.xp =
 function renderProfile() { const user = authState.user; if (user) { document.getElementById('profileName').textContent = user.name || 'المستخدم'; document.getElementById('profileEmail').textContent = user.email || 'ضيف'; } document.getElementById('profileLevel').textContent = calculateLevel(state.xp || 0); document.getElementById('profileGems').textContent = state.gems; document.getElementById('profileStreak').textContent = state.streak; document.getElementById('profileXP').textContent = state.xp || 0; if (state.equippedAvatar) { const item = SHOP_CATEGORIES.avatars.items.find(i => i.id === state.equippedAvatar); if (item) document.getElementById('profileAvatar').textContent = item.icon; } }
 
 // ==================== SETTINGS ====================
-function renderSettings() { document.getElementById('darkModeToggle').classList.toggle('active', state.darkMode); document.getElementById('notifToggle').classList.toggle('active', state.notifEnabled); document.getElementById('soundToggle').classList.toggle('active', state.soundEnabled); document.getElementById('vibrationToggle').classList.toggle('active', state.vibrationEnabled); }
+function renderSettings() {
+  document.getElementById('darkModeToggle').classList.toggle('active', state.darkMode);
+  document.getElementById('notifToggle').classList.toggle('active', state.notifEnabled);
+  document.getElementById('soundToggle').classList.toggle('active', state.soundEnabled);
+  document.getElementById('vibrationToggle').classList.toggle('active', state.vibrationEnabled);
+  
+  // Populate level selector
+  const levelSelector = document.getElementById('levelSelector');
+  if (levelSelector) {
+    levelSelector.innerHTML = LEVELS.map(level => 
+      '<button class="btn ' + (state.level === level.id ? 'btn-primary' : '') + '" style="width: auto; padding: 8px 16px; font-size: 13px;" onclick="selectLevel(' + level.id + ')">' + level.icon + ' ' + level.id + '</button>'
+    ).join('');
+  }
+}
 function toggleDarkMode() { state.darkMode = !state.darkMode; updateTheme(); saveState(); }
 function updateTheme() { document.documentElement.setAttribute('data-theme', state.darkMode ? 'dark' : 'light'); }
 function toggleNotifications() { state.notifEnabled = !state.notifEnabled; if (state.notifEnabled && 'Notification' in window) Notification.requestPermission(); saveState(); }
@@ -582,20 +706,12 @@ async function initSupabase() {
     
     if (state.supabaseConnected) {
       console.log('✅ Supabase connected');
-      // Sync current state if user is logged in
       if (supabaseService.userId) {
         await supabaseService.syncState(state);
       }
     } else {
-      console.log('⚠️ Supabase tables not created yet');
-      // Show setup banner
-      const banner = document.createElement('div');
-      banner.id = 'supabase-setup-banner';
-      banner.style.cssText = 'position: fixed; bottom: 70px; left: 16px; right: 16px; padding: 12px; background: linear-gradient(135deg, #F59E0B, #D97706); color: white; border-radius: 14px; z-index: 999; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600;';
-      banner.innerHTML = '<span>⚠️ قاعدة البيانات غير مُعدة</span><button onclick="showSupabaseSetup()" style="background: white; color: #D97706; border: none; padding: 6px 12px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 12px;">الإعداد</button>';
-      if (document.getElementById('appContainer').style.display !== 'none') {
-        document.body.appendChild(banner);
-      }
+      console.log('⚠️ Supabase tables not created yet - using localStorage only');
+      // Don't show intrusive banner - user can check in settings
     }
   } catch (e) {
     console.warn('Supabase init error:', e);

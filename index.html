@@ -200,6 +200,18 @@
         <div id="shopItemsContainer"></div>
       </section>
 
+      <!-- Dashboard -->
+      <section class="screen" id="dashboardScreen">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-icon" style="background: rgba(59,130,246,0.15);">📊</div><div class="stat-value" style="color: #3B82F6;" id="statLevel">1</div><div class="stat-label">المستوى</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background: rgba(245,158,11,0.15);">💎</div><div class="stat-value" style="color: #F59E0B;" id="statGems">0</div><div class="stat-label">الجواهر</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background: rgba(249,115,22,0.15);">🔥</div><div class="stat-value" style="color: #F97316;" id="statStreak">0</div><div class="stat-label">السلسلة</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background: rgba(16,185,129,0.15);">📅</div><div class="stat-value" style="color: #10B981;" id="statDays">0</div><div class="stat-label">أيام مكتملة</div></div>
+        </div>
+        <div class="card"><div style="font-weight: 800; margin-bottom: 12px; text-align: right;">تقدم اليوم</div><div class="progress-container"><div class="progress-bar" id="dashProgress" style="width: 0%"></div></div></div>
+        <div class="card"><div style="font-weight: 800; margin-bottom: 12px; text-align: right;">🏆 الترتيب العالمي</div><div id="leaderboardPreview"></div></div>
+      </section>
+
       <!-- Adhkar -->
       <section class="screen" id="adhkarScreen">
         <div class="card" style="background: linear-gradient(135deg, #8B5CF6, #DB2777); color: white; margin-bottom: 16px; text-align: center;">
@@ -215,6 +227,14 @@
           <div style="font-size: 20px; font-weight: 900;">📖 القرآن الكريم</div>
         </div>
         <div id="quranPartsContainer"></div>
+      </section>
+
+      <!-- Dua Book -->
+      <section class="screen" id="duaScreen">
+        <div class="card" style="background: linear-gradient(135deg, #10B981, #059669); color: white; margin-bottom: 16px; text-align: center;">
+          <div style="font-size: 20px; font-weight: 900;">🤲 ديوان الأدعية</div>
+        </div>
+        <div id="duaCategories"></div>
       </section>
 
       <!-- Profile -->
@@ -249,9 +269,18 @@
           <div class="toggle-row"><span class="toggle-label">🔊 الصوت</span><div class="toggle" id="soundToggle" onclick="toggleSound()"></div></div>
           <div class="toggle-row"><span class="toggle-label">📳 الاهتزاز</span><div class="toggle" id="vibrationToggle" onclick="toggleVibration()"></div></div>
         </div>
-        <div class="card" style="margin-top: 12px; text-align: center;">
-          <div style="font-size: 12px; color: var(--text-muted);">الإصدار 2.1 — مجاني بالكامل ❤️</div>
+        <div class="card" style="margin-top: 12px;">
+          <div style="font-weight: 800; margin-bottom: 12px;">اختر المستوى</div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="levelSelector"></div>
         </div>
+        <div class="card" style="margin-top: 12px;">
+          <div style="font-weight: 800; margin-bottom: 12px;">📤 البيانات</div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-primary" style="flex: 1;" onclick="exportData()">تصدير</button>
+            <button class="btn btn-success" style="flex: 1;" onclick="importData()">استيراد</button>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="resetData()" style="background: var(--danger); margin-top: 12px;">🗑️ مسح البيانات</button>
       </section>
     </main>
 
