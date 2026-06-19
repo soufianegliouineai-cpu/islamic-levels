@@ -609,6 +609,24 @@ body {
   animation: pulse 2s infinite;
 }
 
+/* Filter Buttons */
+.filter-btn {
+  flex: 1;
+  padding: 10px 16px;
+  font-size: 13px;
+}
+
+.filter-btn.active {
+  background: var(--primary);
+  color: white;
+}
+
+.filter-btn:not(.active) {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
 /* Responsive */
 @media (max-width: 400px) {
   .stats-grid {

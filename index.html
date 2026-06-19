@@ -18,8 +18,8 @@
 <body>
   <!-- Header -->
   <header class="header">
-    <h1>🌟 المستويات الإيمانية</h1>
-    <p>اختر مستواك وابدأ رحلتك الآن!</p>
+    <h1 id="headerTitle">🌟 المستويات الإيمانية</h1>
+    <p id="headerSubtitle">اختر مستواك وابدأ رحلتك الآن!</p>
   </header>
 
   <!-- Install Banner -->
@@ -39,9 +39,7 @@
       <div style="text-align: center; margin-bottom: 20px;">
         <p style="font-size: 17px; font-weight: 700;">🎯 اختر المستوى المناسب لك وابدأ تتبع تقدمك اليومي!</p>
       </div>
-      
       <div id="levelsContainer"></div>
-      
       <div class="tip-card">
         <div class="tip-title">💡 نصيحة ذهبية</div>
         <div class="tip-text">ابدأ بالمستوى المناسب لك وتدرج تدريجياً. الاستمرارية أهم من السرعة! 🎯</div>
@@ -63,13 +61,11 @@
           <span style="font-size: 13px; color: var(--text-muted);" id="todayDate"></span>
         </div>
       </div>
-
       <div class="card" style="background: #FEF3C7; border-color: #F59E0B; display: none;" id="rewardBanner">
         <div style="text-align: center; font-weight: 800; color: #92400E;">
           🎉 مبروك! أكملت يومك وحصلت على <span id="rewardGems">0</span> جواهر!
         </div>
       </div>
-
       <div id="tasksContainer"></div>
     </section>
 
@@ -97,18 +93,74 @@
           <div class="stat-label">أيام مكتملة</div>
         </div>
       </div>
-
       <div class="card">
         <div style="font-weight: 800; margin-bottom: 12px; text-align: right;">تقدم اليوم</div>
         <div class="progress-container">
           <div class="progress-bar" id="dashProgress" style="width: 0%"></div>
         </div>
-        <div style="text-align: center; margin-top: 8px; font-size: 14px; color: var(--text-muted);" id="dashProgressText">0%</div>
       </div>
-
       <div class="card">
         <div style="font-weight: 800; margin-bottom: 12px; text-align: right;">🏆 الترتيب العالمي</div>
         <div id="leaderboardPreview"></div>
+      </div>
+    </section>
+
+    <!-- Family Screen -->
+    <section class="screen" id="familyScreen">
+      <div id="familyContent"></div>
+    </section>
+
+    <!-- Leaderboard Screen -->
+    <section class="screen" id="leaderboardScreen">
+      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+        <button class="btn btn-primary filter-btn active" onclick="filterLeaderboard('streak')">🔥 السلسلة</button>
+        <button class="btn filter-btn" onclick="filterLeaderboard('gems')">💎 الجواهر</button>
+        <button class="btn filter-btn" onclick="filterLeaderboard('level')">📊 المستوى</button>
+      </div>
+      <div id="leaderboardList"></div>
+    </section>
+
+    <!-- Share Screen -->
+    <section class="screen" id="shareScreen">
+      <div class="card" style="background: var(--primary); color: white; text-align: center; margin-bottom: 16px;">
+        <div style="font-size: 24px; margin-bottom: 8px;">🌟 شارك رحلتك الإيمانية!</div>
+        <div style="font-size: 14px; opacity: 0.9;">ادعُ أصدقاءك واكسب جواهر إضافية</div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight: 800; margin-bottom: 12px;">كود الدعوة الخاص بك</div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <input type="text" id="referralCode" readonly style="flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 10px; font-size: 18px; font-weight: 800; text-align: center; background: var(--bg);" />
+          <button class="btn btn-primary" style="width: auto; padding: 12px 20px;" onclick="copyReferralCode()">📋 نسخ</button>
+        </div>
+      </div>
+
+      <div style="font-weight: 800; margin-bottom: 12px; text-align: right;">شارك عبر</div>
+      <div class="share-grid">
+        <button class="share-btn" onclick="shareWhatsApp()">
+          <div class="share-icon" style="background: #25D366;">💬</div>
+          <div class="share-name">واتساب</div>
+        </button>
+        <button class="share-btn" onclick="shareTwitter()">
+          <div class="share-icon" style="background: #000;">𝕏</div>
+          <div class="share-name">تويتر</div>
+        </button>
+        <button class="share-btn" onclick="shareTelegram()">
+          <div class="share-icon" style="background: #0088cc;">✈️</div>
+          <div class="share-name">تليجرام</div>
+        </button>
+        <button class="share-btn" onclick="shareNative()">
+          <div class="share-icon" style="background: var(--primary);">📤</div>
+          <div class="share-name">مشاركة عامة</div>
+        </button>
+      </div>
+
+      <div class="card" style="margin-top: 16px;">
+        <div style="font-weight: 800; margin-bottom: 12px;">أدخل كود دعوة صديق</div>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="friendCode" placeholder="أدخل الكود" style="flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 10px; font-size: 16px; text-align: center;" />
+          <button class="btn btn-success" style="width: auto; padding: 12px 20px;" onclick="applyFriendCode()">تطبيق</button>
+        </div>
       </div>
     </section>
 
@@ -124,7 +176,6 @@
           <div class="stat-label">إجمالي</div>
         </div>
       </div>
-
       <div class="card">
         <div class="achievement-grid" id="achievementsGrid"></div>
       </div>
@@ -136,7 +187,6 @@
         <div style="font-weight: 800;">التحديات المكتملة</div>
         <div style="font-size: 36px; font-weight: 900; margin-top: 8px;" id="challengesCount">0/6</div>
       </div>
-
       <div id="challengesContainer"></div>
     </section>
 
@@ -144,28 +194,23 @@
     <section class="screen" id="settingsScreen">
       <div class="card">
         <div style="font-weight: 800; margin-bottom: 16px;">الإعدادات</div>
-        
         <div class="toggle-row">
           <span class="toggle-label">🌙 الوضع الليلي</span>
           <div class="toggle" id="darkModeToggle" onclick="toggleDarkMode()"></div>
         </div>
-        
         <div class="toggle-row">
           <span class="toggle-label">🔔 التذكير اليومي</span>
           <div class="toggle" id="notifToggle" onclick="toggleNotifications()"></div>
         </div>
-        
         <div class="toggle-row" style="border: none;">
           <span class="toggle-label">📤 تصدير البيانات</span>
           <button class="btn" style="width: auto; padding: 10px 20px; font-size: 14px;" onclick="exportData()">تصدير</button>
         </div>
       </div>
-
       <div class="card">
         <div style="font-weight: 800; margin-bottom: 12px;">المستوى الحالي</div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="levelSelector"></div>
       </div>
-
       <button class="btn btn-primary" onclick="resetData()" style="background: var(--danger);">
         🗑️ مسح جميع البيانات
       </button>
@@ -183,13 +228,17 @@
       <span>📊</span>
       <span>التتبع</span>
     </button>
-    <button class="nav-item" onclick="showScreen('dashboard')" data-screen="dashboard">
-      <span>📈</span>
-      <span>لوحة التحكم</span>
+    <button class="nav-item" onclick="showScreen('family')" data-screen="family">
+      <span>👨‍👩‍👧</span>
+      <span>العائلة</span>
     </button>
-    <button class="nav-item" onclick="showScreen('achievements')" data-screen="achievements">
+    <button class="nav-item" onclick="showScreen('share')" data-screen="share">
+      <span>📤</span>
+      <span>مشاركة</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('leaderboard')" data-screen="leaderboard">
       <span>🏆</span>
-      <span>الإنجازات</span>
+      <span>الترتيب</span>
     </button>
     <button class="nav-item" onclick="showScreen('settings')" data-screen="settings">
       <span>⚙️</span>

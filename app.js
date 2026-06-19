@@ -104,14 +104,6 @@ const ACHIEVEMENTS = [
   { id: "perfect-week", title: "أسبوع كامل", icon: "✅", gems: 150, check: s => s.totalDays >= 7 }
 ];
 
-const LEADERBOARD = [
-  { name: "أحمد", level: 4, streak: 45, gems: 1240 },
-  { name: "فاطمة", level: 5, streak: 120, gems: 3890 },
-  { name: "يوسف", level: 3, streak: 12, gems: 560 },
-  { name: "عائشة", level: 4, streak: 67, gems: 2100 },
-  { name: "محمد", level: 2, streak: 23, gems: 890 }
-];
-
 // ==================== STATE ====================
 let state = {
   level: 1,
@@ -124,19 +116,30 @@ let state = {
   completedChallenges: [],
   achievements: [],
   darkMode: false,
-  notifEnabled: false
+  notifEnabled: false,
+  family: null,
+  referralCode: null,
+  referredBy: null,
+  totalShared: 0
 };
 
-// Load state from localStorage
+let currentLeaderboardFilter = 'streak';
+
+// ==================== UTILITY ====================
+function generateCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+  return code;
+}
+
 function loadState() {
   const saved = localStorage.getItem('islamicLevels');
-  if (saved) {
-    state = { ...state, ...JSON.parse(saved) };
-  }
+  if (saved) state = { ...state, ...JSON.parse(saved) };
+  if (!state.referralCode) state.referralCode = generateCode();
   updateTheme();
 }
 
-// Save state to localStorage
 function saveState() {
   localStorage.setItem('islamicLevels', JSON.stringify(state));
 }
@@ -145,17 +148,19 @@ function saveState() {
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  
   document.getElementById(name + 'Screen').classList.add('active');
   document.querySelector(`[data-screen="${name}"]`).classList.add('active');
   
   if (name === 'tracker') renderTracker();
   if (name === 'dashboard') renderDashboard();
+  if (name === 'family') renderFamily();
+  if (name === 'leaderboard') renderLeaderboard();
   if (name === 'achievements') renderAchievements();
   if (name === 'challenges') renderChallenges();
+  if (name === 'share') renderShare();
 }
 
-// ==================== RENDERING ====================
+// ==================== HOME ====================
 function renderLevels() {
   const container = document.getElementById('levelsContainer');
   container.innerHTML = LEVELS.map(level => `
@@ -171,12 +176,18 @@ function renderLevels() {
   `).join('');
 }
 
+function selectLevel(levelId) {
+  state.level = levelId;
+  state.todayTasks = [];
+  saveState();
+  showScreen('tracker');
+}
+
+// ==================== TRACKER ====================
 function renderTracker() {
   const level = LEVELS.find(l => l.id === state.level);
-  if (!level) return;
-  
-  // Get today's tasks
   const today = new Date().toISOString().split('T')[0];
+  
   if (state.lastDate !== today) {
     state.todayTasks = [];
     state.lastDate = today;
@@ -210,6 +221,14 @@ function renderTracker() {
   updateProgress();
 }
 
+function toggleTask(taskId) {
+  const idx = state.todayTasks.indexOf(taskId);
+  if (idx === -1) state.todayTasks.push(taskId);
+  else state.todayTasks.splice(idx, 1);
+  saveState();
+  renderTracker();
+}
+
 function updateProgress() {
   const level = LEVELS.find(l => l.id === state.level);
   const totalTasks = level.sections.reduce((sum, s) => sum + s.tasks.length, 0);
@@ -224,32 +243,16 @@ function updateProgress() {
     state.gems += reward;
     document.getElementById('rewardBanner').style.display = 'block';
     document.getElementById('rewardGems').textContent = reward;
-    
-    // Update streak
-    const today = new Date().toISOString().split('T')[0];
-    if (state.lastDate !== today) {
-      state.streak++;
-      state.totalDays++;
-      state.longestStreak = Math.max(state.longestStreak, state.streak);
-      state.lastDate = today;
-    }
-    
+    state.streak++;
+    state.totalDays++;
+    state.longestStreak = Math.max(state.longestStreak, state.streak);
+    state.lastDate = new Date().toISOString().split('T')[0];
     saveState();
     checkAchievements();
   }
 }
 
-function toggleTask(taskId) {
-  const idx = state.todayTasks.indexOf(taskId);
-  if (idx === -1) {
-    state.todayTasks.push(taskId);
-  } else {
-    state.todayTasks.splice(idx, 1);
-  }
-  saveState();
-  renderTracker();
-}
-
+// ==================== DASHBOARD ====================
 function renderDashboard() {
   document.getElementById('statLevel').textContent = state.level;
   document.getElementById('statGems').textContent = state.gems;
@@ -258,24 +261,299 @@ function renderDashboard() {
   
   const level = LEVELS.find(l => l.id === state.level);
   const totalTasks = level.sections.reduce((sum, s) => sum + s.tasks.length, 0);
-  const completed = state.todayTasks.length;
-  const percent = Math.round((completed / totalTasks) * 100);
-  
+  const percent = Math.round((state.todayTasks.length / totalTasks) * 100);
   document.getElementById('dashProgress').style.width = percent + '%';
-  document.getElementById('dashProgressText').textContent = percent + '%';
   
-  // Leaderboard
+  renderLeaderboardPreview();
+}
+
+function renderLeaderboardPreview() {
   const container = document.getElementById('leaderboardPreview');
-  const sorted = [...LEADERBOARD].sort((a, b) => b.streak - a.streak).slice(0, 5);
-  container.innerHTML = sorted.map((entry, i) => `
+  const all = getFullLeaderboard();
+  container.innerHTML = all.slice(0, 5).map((entry, i) => `
     <div class="leader-row">
       <div class="leader-rank">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i+1)}</div>
-      <div class="leader-name">${entry.name}</div>
+      <div class="leader-name">${entry.name}${entry.isYou ? ' (أنت)' : ''}</div>
       <div class="leader-score" style="color: #F97316;">🔥 ${entry.streak}</div>
     </div>
   `).join('');
 }
 
+// ==================== FAMILY ====================
+function renderFamily() {
+  const container = document.getElementById('familyContent');
+  
+  if (!state.family) {
+    container.innerHTML = `
+      <div class="card">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 48px; margin-bottom: 12px;">👨‍👩‍👧</div>
+          <div style="font-weight: 800; font-size: 18px;">ابدأ عائلتك الآن</div>
+          <div style="color: var(--text-muted); margin-top: 8px;">تابع تقدم أطفالك وشاركهم المكافآت</div>
+        </div>
+        
+        <button class="btn btn-primary" onclick="createFamily()">
+          ➕ إنشاء عائلة جديدة
+        </button>
+        
+        <div style="text-align: center; margin: 16px 0; color: var(--text-muted);">— أو —</div>
+        
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="joinFamilyCode" placeholder="كود العائلة" style="flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 10px; text-align: center; font-size: 16px;" />
+          <button class="btn btn-success" style="width: auto; padding: 12px 20px;" onclick="joinFamily()">انضمام</button>
+        </div>
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="card" style="background: #ECFDF5; border-color: #34D399;">
+        <div style="font-weight: 800; margin-bottom: 8px;">كود العائلة</div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <input type="text" value="${state.family.code}" readonly style="flex: 1; padding: 12px; border: 2px solid #34D399; border-radius: 10px; font-size: 24px; font-weight: 800; text-align: center; background: white;" />
+          <button class="btn btn-success" style="width: auto; padding: 12px 20px;" onclick="shareFamilyCode()">📤 مشاركة</button>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div style="font-weight: 800; margin-bottom: 12px;">أعضاء العائلة</div>
+        ${state.family.members.map(m => `
+          <div style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); gap: 12px;">
+            <div style="font-size: 24px;">${m.role === 'parent' ? '👨' : '👧'}</div>
+            <div style="flex: 1; text-align: right;">
+              <div style="font-weight: 700;">${m.name}</div>
+              <div style="font-size: 12px; color: var(--text-muted);">${m.role === 'parent' ? 'والد' : 'طفل'}</div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <span style="color: #F97316; font-weight: 800;">🔥 ${m.streak}</span>
+              <span style="color: #F59E0B; font-weight: 800;">💎 ${m.gems}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      
+      ${state.family.members[0]?.role === 'parent' ? `
+        <div class="card">
+          <div style="font-weight: 800; margin-bottom: 12px;">إضافة مكافأة</div>
+          <input type="text" id="rewardName" placeholder="اسم المكافأة" style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 10px; margin-bottom: 8px; text-align: right;" />
+          <input type="number" id="rewardGemsReq" placeholder="عدد الجواهر" style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 10px; margin-bottom: 12px; text-align: center;" />
+          <button class="btn btn-warning" onclick="addFamilyReward()">➕ أضف مكافأة</button>
+        </div>
+      ` : ''}
+      
+      ${state.family.rewards.length ? `
+        <div class="card">
+          <div style="font-weight: 800; margin-bottom: 12px;">المكافآت</div>
+          ${state.family.rewards.map((r, i) => `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border);">
+              <div style="font-weight: 700;">${r.name}</div>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="color: #F59E0B; font-weight: 800;">💎 ${r.gems}</span>
+                ${r.completed ? '<span style="color: var(--success); font-weight: 800;">✓</span>' : `
+                  <button class="btn btn-success" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="redeemReward(${i})">استبدال</button>
+                `}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+      
+      <button class="btn btn-primary" style="background: var(--danger);" onclick="leaveFamily()">🚪 مغادرة العائلة</button>
+    `;
+  }
+}
+
+function createFamily() {
+  const name = prompt('اسم العائلة:');
+  if (name) {
+    state.family = {
+      name: name,
+      code: generateCode(),
+      members: [{ name: 'أنت', role: 'parent', streak: state.streak, gems: state.gems }],
+      rewards: []
+    };
+    saveState();
+    renderFamily();
+  }
+}
+
+function joinFamily() {
+  const code = document.getElementById('joinFamilyCode').value.toUpperCase();
+  if (code.length === 8) {
+    const name = prompt('اسمك:');
+    if (name) {
+      state.family = {
+        name: 'عائلتك',
+        code: code,
+        members: [
+          { name: 'الأب', role: 'parent', streak: 10, gems: 500 },
+          { name: name, role: 'child', streak: state.streak, gems: state.gems }
+        ],
+        rewards: []
+      };
+      saveState();
+      renderFamily();
+    }
+  }
+}
+
+function leaveFamily() {
+  if (confirm('هل تريد مغادرة العائلة؟')) {
+    state.family = null;
+    saveState();
+    renderFamily();
+  }
+}
+
+function shareFamilyCode() {
+  const msg = `كود عائلتي: ${state.family.code}\nانضم إلى عائلتنا في المستويات الإيمانية!`;
+  if (navigator.share) {
+    navigator.share({ title: 'كود العائلة', text: msg });
+  } else {
+    navigator.clipboard.writeText(msg);
+    alert('تم نسخ الكود!');
+  }
+}
+
+function addFamilyReward() {
+  const name = document.getElementById('rewardName').value;
+  const gems = parseInt(document.getElementById('rewardGemsReq').value);
+  if (name && gems) {
+    state.family.rewards.push({ name, gems, completed: false });
+    saveState();
+    renderFamily();
+  }
+}
+
+function redeemReward(index) {
+  const reward = state.family.rewards[index];
+  if (state.gems >= reward.gems) {
+    state.gems -= reward.gems;
+    state.family.rewards[index].completed = true;
+    saveState();
+    renderFamily();
+  } else {
+    alert('ليس لديك جواهر كافية!');
+  }
+}
+
+// ==================== LEADERBOARD ====================
+function getFullLeaderboard() {
+  const fakeUsers = [
+    { name: "أحمد", level: 4, streak: 45, gems: 1240 },
+    { name: "فاطمة", level: 5, streak: 120, gems: 3890 },
+    { name: "يوسف", level: 3, streak: 12, gems: 560 },
+    { name: "عائشة", level: 4, streak: 67, gems: 2100 },
+    { name: "محمد", level: 2, streak: 23, gems: 890 },
+    { name: "خديجة", level: 3, streak: 34, gems: 1100 },
+    { name: "علي", level: 4, streak: 56, gems: 1800 },
+    { name: "زينب", level: 2, streak: 18, gems: 720 }
+  ];
+  
+  fakeUsers.push({
+    name: 'أنت',
+    level: state.level,
+    streak: state.streak,
+    gems: state.gems,
+    isYou: true
+  });
+  
+  return fakeUsers;
+}
+
+function filterLeaderboard(filter) {
+  currentLeaderboardFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderLeaderboard();
+}
+
+function renderLeaderboard() {
+  const all = getFullLeaderboard();
+  const sorted = [...all].sort((a, b) => {
+    if (currentLeaderboardFilter === 'streak') return b.streak - a.streak;
+    if (currentLeaderboardFilter === 'gems') return b.gems - a.gems;
+    return b.level - a.level;
+  });
+  
+  const container = document.getElementById('leaderboardList');
+  container.innerHTML = sorted.map((entry, i) => `
+    <div class="card" style="padding: 16px; ${entry.isYou ? 'border: 2px solid var(--primary); background: rgba(139,92,246,0.05);' : ''}">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 40px; font-size: 24px; font-weight: 900; text-align: center;">
+          ${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i+1)}
+        </div>
+        <div style="flex: 1;">
+          <div style="font-weight: 800;">${entry.name}${entry.isYou ? ' (أنت)' : ''}</div>
+          <div style="font-size: 12px; color: var(--text-muted);">المستوى ${entry.level}</div>
+        </div>
+        <div style="text-align: left;">
+          ${currentLeaderboardFilter === 'streak' ? `<span style="font-size: 20px; font-weight: 900; color: #F97316;">🔥 ${entry.streak}</span>` : ''}
+          ${currentLeaderboardFilter === 'gems' ? `<span style="font-size: 20px; font-weight: 900; color: #F59E0B;">💎 ${entry.gems}</span>` : ''}
+          ${currentLeaderboardFilter === 'level' ? `<span style="font-size: 20px; font-weight: 900; color: #3B82F6;">📊 ${entry.level}</span>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ==================== SHARE ====================
+function renderShare() {
+  document.getElementById('referralCode').value = state.referralCode;
+}
+
+function copyReferralCode() {
+  navigator.clipboard.writeText(state.referralCode);
+  alert('تم نسخ الكود!');
+}
+
+function shareWhatsApp() {
+  const msg = `🌟 انضم إلي في تطبيق المستويات الإيمانية!\n\nكود دعوتي: ${state.referralCode}\n\nتابع تقدمك الإيماني واكسب جواهر يومية!`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
+  state.totalShared++;
+  state.gems += 10;
+  saveState();
+}
+
+function shareTwitter() {
+  const msg = `🌟 أنا أتابع رحلتي الإيمانية مع تطبيق المستويات الإيمانية! كود دعوتي: ${state.referralCode}`;
+  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(msg)}`);
+  state.totalShared++;
+  state.gems += 10;
+  saveState();
+}
+
+function shareTelegram() {
+  const msg = `🌟 انضم إلي في تطبيق المستويات الإيمانية! كود دعوتي: ${state.referralCode}`;
+  window.open(`https://t.me/share/url?url=&text=${encodeURIComponent(msg)}`);
+  state.totalShared++;
+  state.gems += 10;
+  saveState();
+}
+
+function shareNative() {
+  if (navigator.share) {
+    navigator.share({
+      title: 'المستويات الإيمانية',
+      text: `🌟 انضم إلي في تطبيق المستويات الإيمانية! كود دعوتي: ${state.referralCode}`
+    });
+    state.totalShared++;
+    state.gems += 10;
+    saveState();
+  }
+}
+
+function applyFriendCode() {
+  const code = document.getElementById('friendCode').value.toUpperCase();
+  if (code && code !== state.referralCode) {
+    state.gems += 50;
+    state.referredBy = code;
+    saveState();
+    alert('🎉 تم تطبيق الكود! حصلت على 50 جوهرة');
+    document.getElementById('friendCode').value = '';
+  }
+}
+
+// ==================== ACHIEVEMENTS ====================
 function renderAchievements() {
   const container = document.getElementById('achievementsGrid');
   let earned = 0;
@@ -292,14 +570,26 @@ function renderAchievements() {
   }).join('');
   
   document.getElementById('achEarned').textContent = earned;
-  document.getElementById('achTotal').textContent = ACHIEVEMENTS.length;
 }
 
+function checkAchievements() {
+  const stats = { level: state.level, streak: state.streak, gems: state.gems, totalDays: state.totalDays };
+  ACHIEVEMENTS.forEach(ach => {
+    if (!state.achievements.includes(ach.id) && ach.check(stats)) {
+      state.achievements.push(ach.id);
+      state.gems += ach.gems;
+      showNotification('🏆 إنجاز جديد!', `حصلت على: ${ach.title} (+${ach.gems} جوهرة)`);
+    }
+  });
+  saveState();
+}
+
+// ==================== CHALLENGES ====================
 function renderChallenges() {
-  const container = document.getElementById('challengesContainer');
   const completed = state.completedChallenges.length;
   document.getElementById('challengesCount').textContent = `${completed}/${CHALLENGES.length}`;
   
+  const container = document.getElementById('challengesContainer');
   container.innerHTML = CHALLENGES.map(ch => {
     const isCompleted = state.completedChallenges.includes(ch.id);
     return `
@@ -321,14 +611,6 @@ function renderChallenges() {
   }).join('');
 }
 
-// ==================== ACTIONS ====================
-function selectLevel(levelId) {
-  state.level = levelId;
-  state.todayTasks = [];
-  saveState();
-  showScreen('tracker');
-}
-
 function completeChallenge(id) {
   if (!state.completedChallenges.includes(id)) {
     const ch = CHALLENGES.find(c => c.id === id);
@@ -340,18 +622,7 @@ function completeChallenge(id) {
   }
 }
 
-function checkAchievements() {
-  const stats = { level: state.level, streak: state.streak, gems: state.gems, totalDays: state.totalDays };
-  ACHIEVEMENTS.forEach(ach => {
-    if (!state.achievements.includes(ach.id) && ach.check(stats)) {
-      state.achievements.push(ach.id);
-      state.gems += ach.gems;
-      showNotification('🏆 إنجاز جديد!', `حصلت على: ${ach.title} (+${ach.gems} جوهرة)`);
-    }
-  });
-  saveState();
-}
-
+// ==================== SETTINGS ====================
 function toggleDarkMode() {
   state.darkMode = !state.darkMode;
   updateTheme();
@@ -368,25 +639,10 @@ function toggleNotifications() {
   state.notifEnabled = !state.notifEnabled;
   const toggle = document.getElementById('notifToggle');
   if (toggle) toggle.classList.toggle('active', state.notifEnabled);
-  
   if (state.notifEnabled && 'Notification' in window) {
-    Notification.requestPermission().then(p => {
-      if (p === 'granted') {
-        scheduleReminder();
-      }
-    });
+    Notification.requestPermission();
   }
   saveState();
-}
-
-function scheduleReminder() {
-  if ('serviceWorker' in navigator && 'PushManager' in window) {
-    // Schedule daily reminder via service worker
-    navigator.serviceWorker.ready.then(reg => {
-      // This would need a backend to schedule push notifications
-      // For now, we'll just show a local notification
-    });
-  }
 }
 
 function showNotification(title, body) {
@@ -407,29 +663,12 @@ function exportData() {
 function resetData() {
   if (confirm('هل أنت متأكد؟ سيتم مسح جميع بياناتك.')) {
     localStorage.removeItem('islamicLevels');
-    state = {
-      level: 1,
-      streak: 0,
-      longestStreak: 0,
-      gems: 0,
-      totalDays: 0,
-      lastDate: null,
-      todayTasks: [],
-      completedChallenges: [],
-      achievements: [],
-      darkMode: false,
-      notifEnabled: false
-    };
-    saveState();
-    updateTheme();
-    renderTracker();
-    alert('تم مسح البيانات');
+    location.reload();
   }
 }
 
 // ==================== PWA ====================
 let deferredPrompt;
-
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
@@ -440,28 +679,20 @@ function installApp() {
   if (deferredPrompt) {
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(choice => {
-      if (choice.outcome === 'accepted') {
-        document.getElementById('installBanner').classList.remove('show');
-      }
+      if (choice.outcome === 'accepted') document.getElementById('installBanner').classList.remove('show');
       deferredPrompt = null;
     });
   }
 }
 
-// Register service worker
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js')
-    .then(reg => console.log('SW registered'))
-    .catch(err => console.log('SW error:', err));
+  navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', () => {
   loadState();
   renderLevels();
-  renderTracker();
-  
-  // Set initial toggle states
   document.getElementById('darkModeToggle').classList.toggle('active', state.darkMode);
   document.getElementById('notifToggle').classList.toggle('active', state.notifEnabled);
 });
