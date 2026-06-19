@@ -5,198 +5,244 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#8B5CF6">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>🌟 المستويات الإيمانية</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="header">
-    <h1>🌟 المستويات الإيمانية</h1>
-    <p>اختر مستواك وابدأ رحلتك الآن!</p>
-  </header>
-
-  <div class="install-banner" id="installBanner" style="margin: 16px; border-radius: 20px;">
-    <div class="install-text"><h3>📲 تثبيت التطبيق</h3><p>أضفه إلى شاشة الرئيسية</p></div>
-    <button class="install-btn" onclick="installApp()">تثبيت</button>
+  <!-- Auth Modal -->
+  <div class="modal" id="authModal">
+    <div class="modal-content">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="font-size: 64px; margin-bottom: 12px;">🌙</div>
+        <h2 style="font-size: 24px; font-weight: 900;">المستويات الإيمانية</h2>
+        <p style="color: var(--text-muted); margin-top: 8px;">سجّل دخولك لمتابعة تقدمك</p>
+      </div>
+      
+      <div id="loginForm">
+        <input type="email" id="authEmail" placeholder="البريد الإلكتروني" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 12px; font-size: 16px; text-align: right;" />
+        <input type="password" id="authPassword" placeholder="كلمة المرور" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 16px; font-size: 16px; text-align: right;" />
+        <button class="btn btn-primary" onclick="login()">تسجيل الدخول</button>
+        <p style="text-align: center; margin-top: 16px; color: var(--text-muted);">
+          ليس لديك حساب؟ <a href="#" onclick="showRegister()" style="color: var(--primary); font-weight: 700;">إنشاء حساب</a>
+        </p>
+        <p style="text-align: center; margin-top: 8px;">
+          <a href="#" onclick="guestLogin()" style="color: var(--text-muted); font-size: 14px;">الدخول كضيف</a>
+        </p>
+      </div>
+      
+      <div id="registerForm" style="display: none;">
+        <input type="text" id="regName" placeholder="الاسم" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 12px; font-size: 16px; text-align: right;" />
+        <input type="email" id="regEmail" placeholder="البريد الإلكتروني" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 12px; font-size: 16px; text-align: right;" />
+        <input type="password" id="regPassword" placeholder="كلمة المرور" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 16px; font-size: 16px; text-align: right;" />
+        <button class="btn btn-primary" onclick="register()">إنشاء حساب</button>
+        <p style="text-align: center; margin-top: 16px; color: var(--text-muted);">
+          لديك حساب؟ <a href="#" onclick="showLogin()" style="color: var(--primary); font-weight: 700;">تسجيل الدخول</a>
+        </p>
+      </div>
+    </div>
   </div>
 
-  <main class="main">
-    <!-- Home -->
-    <section class="screen active" id="homeScreen">
-      <div style="text-align: center; margin-bottom: 20px;">
-        <p style="font-size: 17px; font-weight: 700;">🎯 اختر المستوى المناسب لك وابدأ تتبع تقدمك اليومي!</p>
-      </div>
-      <div id="levelsContainer"></div>
-      <div class="tip-card"><div class="tip-title">💡 نصيحة ذهبية</div><div class="tip-text">ابدأ بالمستوى المناسب لك وتدرج تدريجياً. الاستمرارية أهم من السرعة! 🎯</div></div>
-    </section>
-
-    <!-- Tracker -->
-    <section class="screen" id="trackerScreen">
-      <div class="card">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-          <span style="font-weight: 800;">التقدم اليومي</span>
-          <span style="color: var(--primary); font-weight: 900;" id="progressPercent">0%</span>
+  <!-- Main App -->
+  <div id="appContainer" style="display: none;">
+    <header class="header">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h1>🌟 المستويات الإيمانية</h1>
+          <p id="welcomeText">مرحباً!</p>
         </div>
-        <div class="progress-container"><div class="progress-bar" id="progressBar" style="width: 0%"></div></div>
-        <div style="display: flex; justify-content: space-between; margin-top: 12px;">
-          <span style="font-size: 13px; color: var(--text-muted);">🔥 السلسلة: <span id="streakCount">0</span></span>
-          <span style="font-size: 13px; color: var(--text-muted);" id="todayDate"></span>
-        </div>
-        <div style="display: flex; gap: 8px; margin-top: 12px;">
-          <button class="btn btn-primary" style="width: auto; padding: 8px 16px; font-size: 13px;" onclick="useStreakFreeze()">🧊 تجميد (<span id="freezeCount">0</span>)</button>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span style="font-size: 20px; font-weight: 900; color: #F59E0B;">💎 <span id="headerGems">0</span></span>
+          <button onclick="showScreen('profile')" style="background: rgba(255,255,255,0.2); border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer;">👤</button>
         </div>
       </div>
-      <div class="card" style="background: #FEF3C7; border-color: #F59E0B; display: none;" id="rewardBanner">
-        <div style="text-align: center; font-weight: 800; color: #92400E;">🎉 مبروك! حصلت على <span id="rewardGems">0</span> جواهر!</div>
-      </div>
-      <div id="tasksContainer"></div>
-    </section>
+    </header>
 
-    <!-- Dashboard -->
-    <section class="screen" id="dashboardScreen">
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-icon" style="background: rgba(59,130,246,0.15);">📊</div><div class="stat-value" style="color: #3B82F6;" id="statLevel">1</div><div class="stat-label">المستوى</div></div>
-        <div class="stat-card"><div class="stat-icon" style="background: rgba(245,158,11,0.15);">💎</div><div class="stat-value" style="color: #F59E0B;" id="statGems">0</div><div class="stat-label">الجواهر</div></div>
-        <div class="stat-card"><div class="stat-icon" style="background: rgba(249,115,22,0.15);">🔥</div><div class="stat-value" style="color: #F97316;" id="statStreak">0</div><div class="stat-label">السلسلة</div></div>
-        <div class="stat-card"><div class="stat-icon" style="background: rgba(16,185,129,0.15);">📅</div><div class="stat-value" style="color: #10B981;" id="statDays">0</div><div class="stat-label">أيام مكتملة</div></div>
-      </div>
-      <div class="card"><div style="font-weight: 800; margin-bottom: 12px; text-align: right;">تقدم اليوم</div><div class="progress-container"><div class="progress-bar" id="dashProgress" style="width: 0%"></div></div></div>
-      <div class="card"><div style="font-weight: 800; margin-bottom: 12px; text-align: right;">🏆 الترتيب العالمي</div><div id="leaderboardPreview"></div></div>
-      
-      <!-- Weekly Report -->
-      <div class="card" id="weeklyReport" style="display: none;">
-        <div style="font-weight: 800; margin-bottom: 12px; text-align: right;">📊 تقرير الأسبوع</div>
-        <div class="weekly-chart" id="weeklyChart"></div>
-        <div style="display: flex; justify-content: space-around; margin-top: 12px;">
-          <div style="text-align: center;"><div style="font-size: 24px; font-weight: 900; color: var(--primary);" id="weekCompleted">0</div><div style="font-size: 12px; color: var(--text-muted);">أيام مكتملة</div></div>
-          <div style="text-align: center;"><div style="font-size: 24px; font-weight: 900; color: #F59E0B;" id="weekGems">0</div><div style="font-size: 12px; color: var(--text-muted);">جواهر مكتسبة</div></div>
-          <div style="text-align: center;"><div style="font-size: 24px; font-weight: 900; color: #F97316;" id="weekStreak">0</div><div style="font-size: 12px; color: var(--text-muted);">أطول سلسلة</div></div>
+    <div class="install-banner" id="installBanner" style="margin: 16px; border-radius: 20px;">
+      <div class="install-text"><h3>📲 تثبيت التطبيق</h3><p>أضفه إلى شاشة الرئيسية</p></div>
+      <button class="install-btn" onclick="installApp()">تثبيت</button>
+    </div>
+
+    <main class="main">
+      <!-- Home -->
+      <section class="screen active" id="homeScreen">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <p style="font-size: 17px; font-weight: 700;">🎯 اختر المستوى المناسب لك!</p>
         </div>
-      </div>
-    </section>
+        <div id="levelsContainer"></div>
+      </section>
 
-    <!-- Family -->
-    <section class="screen" id="familyScreen"><div id="familyContent"></div></section>
-
-    <!-- Share -->
-    <section class="screen" id="shareScreen">
-      <div class="card" style="background: var(--primary); color: white; text-align: center; margin-bottom: 16px;">
-        <div style="font-size: 24px; margin-bottom: 8px;">🌟 شارك رحلتك الإيمانية!</div>
-        <div style="font-size: 14px; opacity: 0.9;">ادعُ أصدقاءك واكسب جواهر إضافية</div>
-      </div>
-      <div class="card">
-        <div style="font-weight: 800; margin-bottom: 12px;">كود الدعوة الخاص بك</div>
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="referralCode" readonly style="flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 10px; font-size: 18px; font-weight: 800; text-align: center; background: var(--bg);" />
-          <button class="btn btn-primary" style="width: auto; padding: 12px 20px;" onclick="copyReferralCode()">📋 نسخ</button>
-        </div>
-      </div>
-      <div style="font-weight: 800; margin-bottom: 12px; text-align: right;">شارك عبر</div>
-      <div class="share-grid">
-        <button class="share-btn" onclick="shareWhatsApp()"><div class="share-icon" style="background: #25D366;">💬</div><div class="share-name">واتساب</div></button>
-        <button class="share-btn" onclick="shareTwitter()"><div class="share-icon" style="background: #000;">𝕏</div><div class="share-name">تويتر</div></button>
-        <button class="share-btn" onclick="shareTelegram()"><div class="share-icon" style="background: #0088cc;">✈️</div><div class="share-name">تليجرام</div></button>
-        <button class="share-btn" onclick="shareNative()"><div class="share-icon" style="background: var(--primary);">📤</div><div class="share-name">مشاركة عامة</div></button>
-      </div>
-      <div class="card" style="margin-top: 16px;">
-        <div style="font-weight: 800; margin-bottom: 12px;">أدخل كود دعوة صديق</div>
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="friendCode" placeholder="أدخل الكود" style="flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 10px; font-size: 16px; text-align: center;" />
-          <button class="btn btn-success" style="width: auto; padding: 12px 20px;" onclick="applyFriendCode()">تطبيق</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Leaderboard -->
-    <section class="screen" id="leaderboardScreen">
-      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-        <button class="btn filter-btn active" onclick="filterLeaderboard('streak')">🔥 السلسلة</button>
-        <button class="btn filter-btn" onclick="filterLeaderboard('gems')">💎 الجواهر</button>
-        <button class="btn filter-btn" onclick="filterLeaderboard('level')">📊 المستوى</button>
-      </div>
-      <div id="leaderboardList"></div>
-    </section>
-
-    <!-- Achievements -->
-    <section class="screen" id="achievementsScreen">
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-value" style="color: var(--primary);" id="achEarned">0</div><div class="stat-label">مكتسب</div></div>
-        <div class="stat-card"><div class="stat-value" style="color: var(--warning);" id="achTotal">10</div><div class="stat-label">إجمالي</div></div>
-      </div>
-      <div class="card"><div class="achievement-grid" id="achievementsGrid"></div></div>
-    </section>
-
-    <!-- Challenges -->
-    <section class="screen" id="challengesScreen">
-      <div class="card" style="background: var(--primary); color: white; text-align: center;">
-        <div style="font-weight: 800;">التحديات المكتملة</div>
-        <div style="font-size: 36px; font-weight: 900; margin-top: 8px;" id="challengesCount">0/6</div>
-      </div>
-      <div id="challengesContainer"></div>
-    </section>
-
-    <!-- Shop -->
-    <section class="screen" id="shopScreen"><div id="shopContent"></div></section>
-
-    <!-- Analytics -->
-    <section class="screen" id="analyticsScreen">
-      <div class="card">
-        <div style="font-weight: 800; margin-bottom: 16px; text-align: right;">📊 إحصائيات مفصلة</div>
-        <div class="analytics-grid">
-          <div class="analytics-item">
-            <div class="analytics-value" style="color: var(--primary);" id="totalPrayers">0</div>
-            <div class="analytics-label">صلاة يومية</div>
+      <!-- Tracker -->
+      <section class="screen" id="trackerScreen">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+            <span style="font-weight: 800;">التقدم اليومي</span>
+            <span style="color: var(--primary); font-weight: 900;" id="progressPercent">0%</span>
           </div>
-          <div class="analytics-item">
-            <div class="analytics-value" style="color: #10B981;" id="totalQuran">0</div>
-            <div class="analytics-label">صفحة قرآن</div>
+          <div class="progress-container"><div class="progress-bar" id="progressBar" style="width: 0%"></div></div>
+          <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+            <span style="font-size: 13px; color: var(--text-muted);">🔥 السلسلة: <span id="streakCount">0</span></span>
+            <span style="font-size: 13px; color: var(--text-muted);" id="todayDate"></span>
           </div>
-          <div class="analytics-item">
-            <div class="analytics-value" style="color: #F59E0B;" id="totalDhikr">0</div>
-            <div class="analytics-label">ذِكر</div>
-          </div>
-          <div class="analytics-item">
-            <div class="analytics-value" style="color: #EF4444;" id="totalKnowledge">0</div>
-            <div class="analytics-label">دقيقة علم</div>
+          <div style="display: flex; gap: 8px; margin-top: 12px;">
+            <button class="btn btn-primary" style="width: auto; padding: 8px 16px; font-size: 13px;" onclick="useStreakFreeze()">🧊 تجميد (<span id="freezeCount">0</span>)</button>
           </div>
         </div>
-      </div>
-      
-      <div class="card">
-        <div style="font-weight: 800; margin-bottom: 12px; text-align: right;">📈 النشاط الأسبوعي</div>
-        <div class="activity-chart" id="activityChart"></div>
-      </div>
-      
-      <div class="card">
-        <div style="font-weight: 800; margin-bottom: 12px; text-align: right;">🎯 أهدافك</div>
-        <div class="goals-list" id="goalsList"></div>
-        <button class="btn btn-primary" style="margin-top: 12px;" onclick="addGoal()">➕ أضف هدف جديد</button>
-      </div>
-    </section>
+        <div class="card" style="background: #FEF3C7; border-color: #F59E0B; display: none;" id="rewardBanner">
+          <div style="text-align: center; font-weight: 800; color: #92400E;">🎉 مبروك! حصلت على <span id="rewardGems">0</span> جواهر!</div>
+        </div>
+        <div id="tasksContainer"></div>
+      </section>
 
-    <!-- Settings -->
-    <section class="screen" id="settingsScreen">
-      <div class="card">
-        <div style="font-weight: 800; margin-bottom: 16px;">الإعدادات</div>
-        <div class="toggle-row"><span class="toggle-label">🌙 الوضع الليلي</span><div class="toggle" id="darkModeToggle" onclick="toggleDarkMode()"></div></div>
-        <div class="toggle-row"><span class="toggle-label">🔔 التذكير اليومي</span><div class="toggle" id="notifToggle" onclick="toggleNotifications()"></div></div>
-        <div class="toggle-row"><span class="toggle-label">🔊 الصوت</span><div class="toggle" id="soundToggle" onclick="toggleSound()"></div></div>
-        <div class="toggle-row" style="border: none;"><span class="toggle-label">📤 تصدير البيانات</span><button class="btn" style="width: auto; padding: 10px 20px; font-size: 14px;" onclick="exportData()">تصدير</button></div>
-      </div>
-      <div class="card"><div style="font-weight: 800; margin-bottom: 12px;">المستوى الحالي</div><div style="display: flex; gap: 8px; flex-wrap: wrap;" id="levelSelector"></div></div>
-      <button class="btn btn-primary" onclick="resetData()" style="background: var(--danger);">🗑️ مسح جميع البيانات</button>
-    </section>
-  </main>
+      <!-- Dashboard -->
+      <section class="screen" id="dashboardScreen">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-icon" style="background: rgba(59,130,246,0.15);">📊</div><div class="stat-value" style="color: #3B82F6;" id="statLevel">1</div><div class="stat-label">المستوى</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background: rgba(245,158,11,0.15);">💎</div><div class="stat-value" style="color: #F59E0B;" id="statGems">0</div><div class="stat-label">الجواهر</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background: rgba(249,115,22,0.15);">🔥</div><div class="stat-value" style="color: #F97316;" id="statStreak">0</div><div class="stat-label">السلسلة</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background: rgba(16,185,129,0.15);">📅</div><div class="stat-value" style="color: #10B981;" id="statDays">0</div><div class="stat-label">أيام مكتملة</div></div>
+        </div>
+        <div class="card"><div style="font-weight: 800; margin-bottom: 12px; text-align: right;">تقدم اليوم</div><div class="progress-container"><div class="progress-bar" id="dashProgress" style="width: 0%"></div></div></div>
+        <div class="card"><div style="font-weight: 800; margin-bottom: 12px; text-align: right;">🏆 الترتيب</div><div id="leaderboardPreview"></div></div>
+        <div class="card" id="weeklyReport" style="display: none;">
+          <div style="font-weight: 800; margin-bottom: 12px; text-align: right;">📊 تقرير الأسبوع</div>
+          <div class="weekly-chart" id="weeklyChart"></div>
+        </div>
+      </section>
 
-  <nav class="nav">
-    <button class="nav-item active" onclick="showScreen('home')" data-screen="home"><span>🏠</span><span>الرئيسية</span></button>
-    <button class="nav-item" onclick="showScreen('tracker')" data-screen="tracker"><span>📊</span><span>التتبع</span></button>
-    <button class="nav-item" onclick="showScreen('shop')" data-screen="shop"><span>🛒</span><span>المتجر</span></button>
-    <button class="nav-item" onclick="showScreen('analytics')" data-screen="analytics"><span>📈</span><span>الإحصائيات</span></button>
-    <button class="nav-item" onclick="showScreen('settings')" data-screen="settings"><span>⚙️</span><span>الإعدادات</span></button>
-  </nav>
+      <!-- Family -->
+      <section class="screen" id="familyScreen"><div id="familyContent"></div></section>
+
+      <!-- Share -->
+      <section class="screen" id="shareScreen">
+        <div class="card" style="background: var(--primary); color: white; text-align: center;">
+          <div style="font-size: 24px; margin-bottom: 8px;">🌟 شارك رحلتك!</div>
+          <div style="font-size: 14px; opacity: 0.9;">ادعُ أصدقاءك واكسب جواهر</div>
+        </div>
+        <div class="card">
+          <div style="font-weight: 800; margin-bottom: 12px;">كود الدعوة</div>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="referralCode" readonly style="flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 10px; font-size: 18px; font-weight: 800; text-align: center; background: var(--bg);" />
+            <button class="btn btn-primary" style="width: auto; padding: 12px 20px;" onclick="copyReferralCode()">📋</button>
+          </div>
+        </div>
+        <div class="share-grid">
+          <button class="share-btn" onclick="shareWhatsApp()"><div class="share-icon" style="background: #25D366;">💬</div><div class="share-name">واتساب</div></button>
+          <button class="share-btn" onclick="shareTwitter()"><div class="share-icon" style="background: #000;">𝕏</div><div class="share-name">تويتر</div></button>
+          <button class="share-btn" onclick="shareTelegram()"><div class="share-icon" style="background: #0088cc;">✈️</div><div class="share-name">تليجرام</div></button>
+          <button class="share-btn" onclick="shareNative()"><div class="share-icon" style="background: var(--primary);">📤</div><div class="share-name">مشاركة</div></button>
+        </div>
+      </section>
+
+      <!-- Leaderboard -->
+      <section class="screen" id="leaderboardScreen">
+        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+          <button class="btn filter-btn active" onclick="filterLeaderboard('streak')">🔥 السلسلة</button>
+          <button class="btn filter-btn" onclick="filterLeaderboard('gems')">💎 الجواهر</button>
+          <button class="btn filter-btn" onclick="filterLeaderboard('level')">📊 المستوى</button>
+        </div>
+        <div id="leaderboardList"></div>
+      </section>
+
+      <!-- Achievements -->
+      <section class="screen" id="achievementsScreen">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-value" style="color: var(--primary);" id="achEarned">0</div><div class="stat-label">مكتسب</div></div>
+          <div class="stat-card"><div class="stat-value" style="color: var(--warning);" id="achTotal">16</div><div class="stat-label">إجمالي</div></div>
+        </div>
+        <div class="card"><div class="achievement-grid" id="achievementsGrid"></div></div>
+      </section>
+
+      <!-- Challenges -->
+      <section class="screen" id="challengesScreen">
+        <div class="card" style="background: var(--primary); color: white; text-align: center;">
+          <div style="font-weight: 800;">التحديات</div>
+          <div style="font-size: 36px; font-weight: 900; margin-top: 8px;" id="challengesCount">0/6</div>
+        </div>
+        <div id="challengesContainer"></div>
+      </section>
+
+      <!-- Shop -->
+      <section class="screen" id="shopScreen"><div id="shopContent"></div></section>
+
+      <!-- Analytics -->
+      <section class="screen" id="analyticsScreen">
+        <div class="card">
+          <div style="font-weight: 800; margin-bottom: 16px; text-align: right;">📊 إحصائيات مفصلة</div>
+          <div class="analytics-grid">
+            <div class="analytics-item"><div class="analytics-value" style="color: var(--primary);" id="totalPrayers">0</div><div class="analytics-label">صلاة</div></div>
+            <div class="analytics-item"><div class="analytics-value" style="color: #10B981;" id="totalQuran">0</div><div class="analytics-label">صفحة قرآن</div></div>
+            <div class="analytics-item"><div class="analytics-value" style="color: #F59E0B;" id="totalDhikr">0</div><div class="analytics-label">ذِكر</div></div>
+            <div class="analytics-item"><div class="analytics-value" style="color: #EF4444;" id="totalKnowledge">0</div><div class="analytics-label">دقيقة علم</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-weight: 800; margin-bottom: 12px; text-align: right;">📈 النشاط</div>
+          <div class="activity-chart" id="activityChart"></div>
+        </div>
+        <div class="card">
+          <div style="font-weight: 800; margin-bottom: 12px; text-align: right;">🎯 أهدافك</div>
+          <div class="goals-list" id="goalsList"></div>
+          <button class="btn btn-primary" style="margin-top: 12px;" onclick="addGoal()">➕ هدف جديد</button>
+        </div>
+      </section>
+
+      <!-- Profile -->
+      <section class="screen" id="profileScreen">
+        <div class="card" style="text-align: center;">
+          <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #EC4899); margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 36px; color: white;" id="profileAvatar">👤</div>
+          <h3 style="font-weight: 800;" id="profileName">المستخدم</h3>
+          <p style="color: var(--text-muted); font-size: 14px;" id="profileEmail">email@example.com</p>
+          <div style="display: flex; justify-content: center; gap: 16px; margin-top: 16px;">
+            <div style="text-align: center;"><div style="font-weight: 900; font-size: 24px; color: var(--primary);" id="profileLevel">1</div><div style="font-size: 12px; color: var(--text-muted);">المستوى</div></div>
+            <div style="text-align: center;"><div style="font-weight: 900; font-size: 24px; color: #F59E0B;" id="profileGems">0</div><div style="font-size: 12px; color: var(--text-muted);">جواهر</div></div>
+            <div style="text-align: center;"><div style="font-weight: 900; font-size: 24px; color: #F97316;" id="profileStreak">0</div><div style="font-size: 12px; color: var(--text-muted);">سلسلة</div></div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div style="font-weight: 800; margin-bottom: 12px;">☁️ المزامنة</div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-primary" style="flex: 1;" onclick="syncToCloud()">📤 رفع</button>
+            <button class="btn btn-success" style="flex: 1;" onclick="syncFromCloud()">📥 تحميل</button>
+          </div>
+          <p style="text-align: center; margin-top: 8px; font-size: 12px; color: var(--text-muted);">آخر مزامنة: <span id="lastSync">لم تتم</span></p>
+        </div>
+        
+        <div class="card">
+          <div style="font-weight: 800; margin-bottom: 12px;">📤 تصدير واستيراد</div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-primary" style="flex: 1;" onclick="exportData()">تصدير</button>
+            <button class="btn btn-success" style="flex: 1;" onclick="importData()">استيراد</button>
+          </div>
+        </div>
+        
+        <button class="btn btn-primary" style="background: var(--danger);" onclick="logout()">🚪 تسجيل الخروج</button>
+      </section>
+
+      <!-- Settings -->
+      <section class="screen" id="settingsScreen">
+        <div class="card">
+          <div style="font-weight: 800; margin-bottom: 16px;">الإعدادات</div>
+          <div class="toggle-row"><span class="toggle-label">🌙 الوضع الليلي</span><div class="toggle" id="darkModeToggle" onclick="toggleDarkMode()"></div></div>
+          <div class="toggle-row"><span class="toggle-label">🔔 التذكيرات</span><div class="toggle" id="notifToggle" onclick="toggleNotifications()"></div></div>
+          <div class="toggle-row"><span class="toggle-label">🔊 الصوت</span><div class="toggle" id="soundToggle" onclick="toggleSound()"></div></div>
+          <div class="toggle-row"><span class="toggle-label">🔄 مزامنة تلقائية</span><div class="toggle" id="autoSyncToggle" onclick="toggleAutoSync()"></div></div>
+        </div>
+        <div class="card"><div style="font-weight: 800; margin-bottom: 12px;">المستوى</div><div style="display: flex; gap: 8px; flex-wrap: wrap;" id="levelSelector"></div></div>
+        <button class="btn btn-primary" onclick="resetData()" style="background: var(--danger);">🗑️ مسح البيانات</button>
+      </section>
+    </main>
+
+    <nav class="nav">
+      <button class="nav-item active" onclick="showScreen('home')" data-screen="home"><span>🏠</span><span>الرئيسية</span></button>
+      <button class="nav-item" onclick="showScreen('tracker')" data-screen="tracker"><span>📊</span><span>التتبع</span></button>
+      <button class="nav-item" onclick="showScreen('shop')" data-screen="shop"><span>🛒</span><span>المتجر</span></button>
+      <button class="nav-item" onclick="showScreen('analytics')" data-screen="analytics"><span>📈</span><span>الإحصائيات</span></button>
+      <button class="nav-item" onclick="showScreen('settings')" data-screen="settings"><span>⚙️</span><span>الإعدادات</span></button>
+    </nav>
+  </div>
 
   <script src="app.js"></script>
 </body>
