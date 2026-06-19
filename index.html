@@ -46,7 +46,7 @@
         <div style="display: flex; gap: 12px; align-items: center;">
           <span style="font-size: 14px; font-weight: 900; color: #F59E0B;">⭐ <span id="headerXP">0</span></span>
           <span style="font-size: 14px; font-weight: 900; color: #F59E0B;">💎 <span id="headerGems">0</span></span>
-          <button onclick="showScreen('profile')" style="background: rgba(255,255,255,0.2); border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer;">👤</button>
+          <button onclick="showScreen('profile')" style="background: rgba(255,255,255,0.2); border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer;" id="profileBtn">👤</button>
         </div>
       </div>
     </header>
@@ -73,19 +73,12 @@
         <div style="font-size: 13px; color: var(--text-muted);" id="gregorianDate">-</div>
       </div>
 
-      <!-- Seasonal Banner -->
-      <div class="card" id="seasonalBanner" style="display: none; margin-bottom: 16px; background: linear-gradient(135deg, #F59E0B, #D97706); color: white; text-align: center;">
-        <div style="font-size: 20px; font-weight: 900;" id="seasonalTitle">🌙</div>
-        <div style="font-size: 14px; opacity: 0.9;" id="seasonalDesc">عبادات موسمية</div>
-      </div>
-
       <!-- Home -->
       <section class="screen active" id="homeScreen">
         <div style="text-align: center; margin-bottom: 16px;">
           <p style="font-size: 17px; font-weight: 700;">🎯 اختر المستوى المناسب لك!</p>
         </div>
         <div id="levelsContainer"></div>
-        <!-- Quick Actions -->
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 16px;">
           <div class="card" style="text-align: center; cursor: pointer; padding: 16px;" onclick="showScreen('tasbih')">
             <div style="font-size: 32px; margin-bottom: 8px;">📿</div>
@@ -93,15 +86,15 @@
           </div>
           <div class="card" style="text-align: center; cursor: pointer; padding: 16px;" onclick="showScreen('qibla')">
             <div style="font-size: 32px; margin-bottom: 8px;">🧭</div>
-            <div style="font-weight: 700; font-size: 14px;">اتجاه القبلة</div>
+            <div style="font-weight: 700; font-size: 14px;">القبلة</div>
           </div>
           <div class="card" style="text-align: center; cursor: pointer; padding: 16px;" onclick="showScreen('dua')">
             <div style="font-size: 32px; margin-bottom: 8px;">🤲</div>
             <div style="font-weight: 700; font-size: 14px;">الأدعية</div>
           </div>
-          <div class="card" style="text-align: center; cursor: pointer; padding: 16px;" onclick="showScreen('goals')">
-            <div style="font-size: 32px; margin-bottom: 8px;">🎯</div>
-            <div style="font-weight: 700; font-size: 14px;">أهدافي</div>
+          <div class="card" style="text-align: center; cursor: pointer; padding: 16px;" onclick="showScreen('shop')">
+            <div style="font-size: 32px; margin-bottom: 8px;">🛒</div>
+            <div style="font-weight: 700; font-size: 14px;">المتجر</div>
           </div>
         </div>
       </section>
@@ -134,13 +127,13 @@
         <div id="prayerTrackerContainer"></div>
         <div class="card" style="margin-top: 16px;">
           <div style="display: flex; justify-content: space-around;">
-            <div style="text-align: center;"><div style="font-size: 28px; font-weight: 900; color: var(--primary);" id="prayersCompleted">0</div><div style="font-size: 12px; color: var(--text-muted);">صلوات مكتملة</div></div>
-            <div style="text-align: center;"><div style="font-size: 28px; font-weight: 900; color: #F59E0B;" id="sunnahCompleted">0</div><div style="font-size: 12px; color: var(--text-muted);">سنن مكتملة</div></div>
+            <div style="text-align: center;"><div style="font-size: 28px; font-weight: 900; color: var(--primary);" id="prayersCompleted">0</div><div style="font-size: 12px; color: var(--text-muted);">صلوات</div></div>
+            <div style="text-align: center;"><div style="font-size: 28px; font-weight: 900; color: #F59E0B;" id="sunnahCompleted">0</div><div style="font-size: 12px; color: var(--text-muted);">سنن</div></div>
           </div>
         </div>
       </section>
 
-      <!-- Tasbih (Digital Counter) -->
+      <!-- Tasbih -->
       <section class="screen" id="tasbihScreen">
         <div class="card" style="background: linear-gradient(135deg, #8B5CF6, #DB2777); color: white; margin-bottom: 16px; text-align: center;">
           <div style="font-size: 20px; font-weight: 900;">📿 السبحة الرقمية</div>
@@ -150,51 +143,35 @@
           <div id="tasbihCounter" style="font-size: 72px; font-weight: 900; color: var(--primary); margin: 20px 0; cursor: pointer; user-select: none; transition: transform 0.1s;" onclick="incrementTasbih()">0</div>
           <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">الهدف: <span id="tasbihTarget">33</span></div>
           <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap;">
-            <button class="btn btn-primary" style="width: auto; padding: 8px 16px; font-size: 13px;" onclick="resetTasbih()">🔄 إعادة</button>
-            <button class="btn" style="width: auto; padding: 8px 16px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('سبحان الله وبحمده')">سبحان الله</button>
-            <button class="btn" style="width: auto; padding: 8px 16px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('الحمد لله')">الحمد لله</button>
-            <button class="btn" style="width: auto; padding: 8px 16px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('الله أكبر')">الله أكبر</button>
-            <button class="btn" style="width: auto; padding: 8px 16px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('أستغفر الله')">أستغفر الله</button>
-            <button class="btn" style="width: auto; padding: 8px 16px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('لا إله إلا الله')">لا إله إلا الله</button>
+            <button class="btn" style="width: auto; padding: 8px 12px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('سبحان الله وبحمده')">سبحان الله</button>
+            <button class="btn" style="width: auto; padding: 8px 12px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('الحمد لله')">الحمد لله</button>
+            <button class="btn" style="width: auto; padding: 8px 12px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('الله أكبر')">الله أكبر</button>
+            <button class="btn" style="width: auto; padding: 8px 12px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('أستغفر الله')">أستغفر الله</button>
           </div>
-          <div style="font-size: 14px; font-weight: 700;">الإجمالي اليوم: <span id="tasbihTotal" style="color: var(--primary);">0</span></div>
+          <button class="btn btn-primary" style="width: auto; padding: 10px 20px;" onclick="resetTasbih()">🔄 إعادة</button>
+          <div style="font-size: 14px; font-weight: 700; margin-top: 16px;">الإجمالي: <span id="tasbihTotal" style="color: var(--primary);">0</span></div>
         </div>
       </section>
 
-      <!-- Qibla Direction -->
-      <section class="screen" id="qiblaScreen">
-        <div class="card" style="background: linear-gradient(135deg, #F59E0B, #D97706); color: white; margin-bottom: 16px; text-align: center;">
-          <div style="font-size: 20px; font-weight: 900;">🧭 اتجاه القبلة</div>
+      <!-- Shop -->
+      <section class="screen" id="shopScreen">
+        <div class="card" style="background: linear-gradient(135deg, #F59E0B, #D97706); color: white; text-align: center; margin-bottom: 16px;">
+          <div style="font-size: 36px; margin-bottom: 8px;">💎</div>
+          <div style="font-size: 32px; font-weight: 900;" id="shopGems">0</div>
+          <div style="font-size: 14px; opacity: 0.9;">جواهرك المتاحة</div>
         </div>
-        <div class="card" style="text-align: center; padding: 40px;">
-          <div id="qiblaCompass" style="width: 200px; height: 200px; border-radius: 50%; border: 4px solid var(--primary); margin: 0 auto 20px; position: relative; transition: transform 0.5s;">
-            <div style="position: absolute; top: -30px; left: 50%; transform: translateX(-50%); font-size: 24px;"> NORTH</div>
-            <div style="position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); font-size: 24px;"> SOUTH</div>
-            <div style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); font-size: 24px;"> WEST</div>
-            <div style="position: absolute; right: -30px; top: 50%; transform: translateY(-50%); font-size: 24px;"> EAST</div>
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">🕋</div>
-          </div>
-          <div style="font-size: 18px; font-weight: 800;" id="qiblaDirection">جاري تحديد الاتجاه...</div>
-          <div style="font-size: 14px; color: var(--text-muted); margin-top: 8px;" id="qiblaAngle">-</div>
-          <button class="btn btn-primary" style="margin-top: 16px;" onclick="startQibla()">📍 تحديث الموقع</button>
+        
+        <!-- Shop Tabs -->
+        <div style="display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto;">
+          <button class="btn shop-tab active" onclick="showShopCategory('powerups')" data-cat="powerups" style="width: auto; padding: 8px 16px; font-size: 13px;">⚡ تعزيزات</button>
+          <button class="btn shop-tab" onclick="showShopCategory('avatars')" data-cat="avatars" style="width: auto; padding: 8px 16px; font-size: 13px;">👤 صور</button>
+          <button class="btn shop-tab" onclick="showShopCategory('themes')" data-cat="themes" style="width: auto; padding: 8px 16px; font-size: 13px;">🎨 ثيمات</button>
+          <button class="btn shop-tab" onclick="showShopCategory('sounds')" data-cat="sounds" style="width: auto; padding: 8px 16px; font-size: 13px;">🔊 أصوات</button>
+          <button class="btn shop-tab" onclick="showShopCategory('badges')" data-cat="badges" style="width: auto; padding: 8px 16px; font-size: 13px;">🏅 شارات</button>
+          <button class="btn shop-tab" onclick="showShopCategory('gifts')" data-cat="gifts" style="width: auto; padding: 8px 16px; font-size: 13px;">🎁 هدايا</button>
         </div>
-      </section>
-
-      <!-- Dua Book -->
-      <section class="screen" id="duaScreen">
-        <div class="card" style="background: linear-gradient(135deg, #10B981, #059669); color: white; margin-bottom: 16px; text-align: center;">
-          <div style="font-size: 20px; font-weight: 900;">🤲 ديوان الأدعية</div>
-        </div>
-        <div id="duaCategories"></div>
-      </section>
-
-      <!-- Goals -->
-      <section class="screen" id="goalsScreen">
-        <div class="card" style="background: linear-gradient(135deg, #EF4444, #DC2626); color: white; margin-bottom: 16px; text-align: center;">
-          <div style="font-size: 20px; font-weight: 900;">🎯 أهدافي اليومية</div>
-        </div>
-        <div id="goalsContainer"></div>
-        <button class="btn btn-primary" style="margin-top: 16px;" onclick="addGoal()">➕ هدف جديد</button>
+        
+        <div id="shopItemsContainer"></div>
       </section>
 
       <!-- Adhkar -->
@@ -214,15 +191,18 @@
         <div id="quranPartsContainer"></div>
       </section>
 
-      <!-- Settings -->
-      <section class="screen" id="settingsScreen">
-        <div class="card">
-          <div style="font-weight: 800; margin-bottom: 16px;">⚙️ الإعدادات</div>
-          <div class="toggle-row"><span class="toggle-label">🌙 الوضع الليلي</span><div class="toggle" id="darkModeToggle" onclick="toggleDarkMode()"></div></div>
-          <div class="toggle-row"><span class="toggle-label">🔔 إشعارات الصلاة</span><div class="toggle" id="notifToggle" onclick="toggleNotifications()"></div></div>
-          <div class="toggle-row"><span class="toggle-label">🔊 الصوت</span><div class="toggle" id="soundToggle" onclick="toggleSound()"></div></div>
-          <div class="toggle-row"><span class="toggle-label">📍 مواقيت الصلاة</span><div class="toggle" id="prayerTimesToggle" onclick="togglePrayerTimes()"></div></div>
-          <div class="toggle-row"><span class="toggle-label">📿 السبحة بالاهتزاز</span><div class="toggle" id="vibrationToggle" onclick="toggleVibration()"></div></div>
+      <!-- Profile -->
+      <section class="screen" id="profileScreen">
+        <div class="card" style="text-align: center;">
+          <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #EC4899); margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 36px; color: white;" id="profileAvatar">👤</div>
+          <h3 style="font-weight: 800;" id="profileName">المستخدم</h3>
+          <p style="color: var(--text-muted); font-size: 14px;" id="profileEmail">-</p>
+          <div style="display: flex; justify-content: center; gap: 12px; margin-top: 16px;">
+            <div style="text-align: center;"><div style="font-weight: 900; font-size: 20px; color: var(--primary);" id="profileLevel">1</div><div style="font-size: 11px; color: var(--text-muted);">المستوى</div></div>
+            <div style="text-align: center;"><div style="font-weight: 900; font-size: 20px; color: #F59E0B;" id="profileGems">0</div><div style="font-size: 11px; color: var(--text-muted);">جواهر</div></div>
+            <div style="text-align: center;"><div style="font-weight: 900; font-size: 20px; color: #F97316;" id="profileStreak">0</div><div style="font-size: 11px; color: var(--text-muted);">سلسلة</div></div>
+            <div style="text-align: center;"><div style="font-weight: 900; font-size: 20px; color: #10B981;" id="profileXP">0</div><div style="font-size: 11px; color: var(--text-muted);">XP</div></div>
+          </div>
         </div>
         <div class="card" style="margin-top: 12px;">
           <div style="font-weight: 800; margin-bottom: 12px;">📤 البيانات</div>
@@ -231,8 +211,20 @@
             <button class="btn btn-success" style="flex: 1;" onclick="importData()">استيراد</button>
           </div>
         </div>
+        <button class="btn btn-primary" style="background: var(--danger); margin-top: 12px;" onclick="logout()">🚪 تسجيل الخروج</button>
+      </section>
+
+      <!-- Settings -->
+      <section class="screen" id="settingsScreen">
+        <div class="card">
+          <div style="font-weight: 800; margin-bottom: 16px;">⚙️ الإعدادات</div>
+          <div class="toggle-row"><span class="toggle-label">🌙 الوضع الليلي</span><div class="toggle" id="darkModeToggle" onclick="toggleDarkMode()"></div></div>
+          <div class="toggle-row"><span class="toggle-label">🔔 إشعارات الصلاة</span><div class="toggle" id="notifToggle" onclick="toggleNotifications()"></div></div>
+          <div class="toggle-row"><span class="toggle-label">🔊 الصوت</span><div class="toggle" id="soundToggle" onclick="toggleSound()"></div></div>
+          <div class="toggle-row"><span class="toggle-label">📳 الاهتزاز</span><div class="toggle" id="vibrationToggle" onclick="toggleVibration()"></div></div>
+        </div>
         <div class="card" style="margin-top: 12px; text-align: center;">
-          <div style="font-size: 12px; color: var(--text-muted);">الإصدار 2.0 — مجاني بالكامل ❤️</div>
+          <div style="font-size: 12px; color: var(--text-muted);">الإصدار 2.1 — مجاني بالكامل ❤️</div>
         </div>
       </section>
     </main>
@@ -240,9 +232,9 @@
     <nav class="nav">
       <button class="nav-item active" onclick="showScreen('home')" data-screen="home"><span>🏠</span><span>الرئيسية</span></button>
       <button class="nav-item" onclick="showScreen('tracker')" data-screen="tracker"><span>📊</span><span>التتبع</span></button>
-      <button class="nav-item" onclick="showScreen('prayer')" data-screen="prayer"><span>🕌</span><span>الصلوات</span></button>
+      <button class="nav-item" onclick="showScreen('shop')" data-screen="shop"><span>🛒</span><span>المتجر</span></button>
       <button class="nav-item" onclick="showScreen('adhkar')" data-screen="adhkar"><span>📿</span><span>الأذكار</span></button>
-      <button class="nav-item" onclick="showScreen('quran')" data-screen="quran"><span>📖</span><span>القرآن</span></button>
+      <button class="nav-item" onclick="showScreen('settings')" data-screen="settings"><span>⚙️</span><span>الإعدادات</span></button>
     </nav>
   </div>
 

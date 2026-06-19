@@ -772,6 +772,22 @@ body {
   margin-bottom: 16px;
 }
 
+/* Shop Tabs */
+.shop-tab {
+  white-space: nowrap;
+}
+
+.shop-tab.active {
+  background: var(--primary);
+  color: white;
+}
+
+.shop-tab:not(.active) {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
 /* Tasbih */
 #tasbihCounter {
   transition: transform 0.1s;
