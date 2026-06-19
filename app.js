@@ -207,7 +207,7 @@ function showScreen(name) {
   const navItem = document.querySelector('[data-screen="' + name + '"]');
   if (navItem) navItem.classList.add('active');
   vibrate(30);
-  const renderers = { tracker: renderTracker, prayer: renderPrayerTracker, adhkar: renderAdhkarCategories, quran: renderQuran, profile: renderProfile, settings: renderSettings, tasbih: renderTasbih, shop: renderShop, dua: renderDuaBook, family: renderFamily, gift: renderGiftConversion, messages: renderMessages };
+  const renderers = { tracker: renderTracker, prayer: renderPrayerTracker, adhkar: renderAdhkarCategories, quran: renderQuran, profile: renderProfile, settings: renderSettings, tasbih: renderTasbih, shop: renderShop, dua: renderDuaBook, family: renderFamily, gift: renderGiftConversion, messages: renderMessages, analytics: renderAnalytics, seasonal: renderSeasonal, community: renderCommunity, qibla: renderQibla };
   if (renderers[name]) renderers[name]();
 }
 
@@ -759,6 +759,50 @@ function toggleSound() { state.soundEnabled = !state.soundEnabled; saveState(); 
 function toggleVibration() { state.vibrationEnabled = !state.vibrationEnabled; vibrate(100); saveState(); }
 function exportData() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })); a.download = 'backup-' + getToday() + '.json'; a.click(); }
 function importData() { const input = document.createElement('input'); input.type = 'file'; input.accept = '.json'; input.onchange = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (ev) => { try { state = { ...getDefaultState(), ...JSON.parse(ev.target.result) }; saveState(); location.reload(); } catch { alert('❌ ملف غير صالح'); } }; reader.readAsText(file); } }; input.click(); }
+
+// ==================== DATA MANAGEMENT ====================
+function exportData() {
+  const data = JSON.stringify(state, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'islamic-levels-backup-' + new Date().toISOString().split('T')[0] + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          Object.assign(state, data);
+          saveState();
+          alert('✅ تم الاستيراد بنجاح!');
+          location.reload();
+        } catch (err) {
+          alert('❌ ملف غير صالح');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+  input.click();
+}
+
+function resetData() {
+  if (confirm('هل أنت متأكد من مسح جميع البيانات؟')) {
+    localStorage.clear();
+    location.reload();
+  }
+}
 
 // ==================== ACHIEVEMENTS ====================
 function checkAchievements() { ACHIEVEMENTS.forEach(ach => { if (!state.achievements.includes(ach.id) && ach.check({ level: state.level, streak: state.streak, gems: state.gems, totalDays: state.totalDays, todayPrayers: state.todayPrayers, totalDhikr: state.totalDhikr, totalQuran: state.totalQuran, xp: state.xp || 0 })) { state.achievements.push(ach.id); state.gems += ach.gems; state.xp = (state.xp || 0) + (ach.xp || 0); vibrate([200, 100, 200, 100, 200]); } }); saveState(); }
