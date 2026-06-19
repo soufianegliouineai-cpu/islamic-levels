@@ -6,7 +6,6 @@
   <meta name="theme-color" content="#8B5CF6">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="description" content="تتبع تقدمك الإيماني يوميًا - 5 مستويات إيمانية مع مهام يومية وجواهر وسلاسل">
   <title>🌟 المستويات الإيمانية</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -65,6 +64,17 @@
       </div>
       <div class="card"><div style="font-weight: 800; margin-bottom: 12px; text-align: right;">تقدم اليوم</div><div class="progress-container"><div class="progress-bar" id="dashProgress" style="width: 0%"></div></div></div>
       <div class="card"><div style="font-weight: 800; margin-bottom: 12px; text-align: right;">🏆 الترتيب العالمي</div><div id="leaderboardPreview"></div></div>
+      
+      <!-- Weekly Report -->
+      <div class="card" id="weeklyReport" style="display: none;">
+        <div style="font-weight: 800; margin-bottom: 12px; text-align: right;">📊 تقرير الأسبوع</div>
+        <div class="weekly-chart" id="weeklyChart"></div>
+        <div style="display: flex; justify-content: space-around; margin-top: 12px;">
+          <div style="text-align: center;"><div style="font-size: 24px; font-weight: 900; color: var(--primary);" id="weekCompleted">0</div><div style="font-size: 12px; color: var(--text-muted);">أيام مكتملة</div></div>
+          <div style="text-align: center;"><div style="font-size: 24px; font-weight: 900; color: #F59E0B;" id="weekGems">0</div><div style="font-size: 12px; color: var(--text-muted);">جواهر مكتسبة</div></div>
+          <div style="text-align: center;"><div style="font-size: 24px; font-weight: 900; color: #F97316;" id="weekStreak">0</div><div style="font-size: 12px; color: var(--text-muted);">أطول سلسلة</div></div>
+        </div>
+      </div>
     </section>
 
     <!-- Family -->
@@ -130,6 +140,42 @@
     <!-- Shop -->
     <section class="screen" id="shopScreen"><div id="shopContent"></div></section>
 
+    <!-- Analytics -->
+    <section class="screen" id="analyticsScreen">
+      <div class="card">
+        <div style="font-weight: 800; margin-bottom: 16px; text-align: right;">📊 إحصائيات مفصلة</div>
+        <div class="analytics-grid">
+          <div class="analytics-item">
+            <div class="analytics-value" style="color: var(--primary);" id="totalPrayers">0</div>
+            <div class="analytics-label">صلاة يومية</div>
+          </div>
+          <div class="analytics-item">
+            <div class="analytics-value" style="color: #10B981;" id="totalQuran">0</div>
+            <div class="analytics-label">صفحة قرآن</div>
+          </div>
+          <div class="analytics-item">
+            <div class="analytics-value" style="color: #F59E0B;" id="totalDhikr">0</div>
+            <div class="analytics-label">ذِكر</div>
+          </div>
+          <div class="analytics-item">
+            <div class="analytics-value" style="color: #EF4444;" id="totalKnowledge">0</div>
+            <div class="analytics-label">دقيقة علم</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div style="font-weight: 800; margin-bottom: 12px; text-align: right;">📈 النشاط الأسبوعي</div>
+        <div class="activity-chart" id="activityChart"></div>
+      </div>
+      
+      <div class="card">
+        <div style="font-weight: 800; margin-bottom: 12px; text-align: right;">🎯 أهدافك</div>
+        <div class="goals-list" id="goalsList"></div>
+        <button class="btn btn-primary" style="margin-top: 12px;" onclick="addGoal()">➕ أضف هدف جديد</button>
+      </div>
+    </section>
+
     <!-- Settings -->
     <section class="screen" id="settingsScreen">
       <div class="card">
@@ -148,7 +194,7 @@
     <button class="nav-item active" onclick="showScreen('home')" data-screen="home"><span>🏠</span><span>الرئيسية</span></button>
     <button class="nav-item" onclick="showScreen('tracker')" data-screen="tracker"><span>📊</span><span>التتبع</span></button>
     <button class="nav-item" onclick="showScreen('shop')" data-screen="shop"><span>🛒</span><span>المتجر</span></button>
-    <button class="nav-item" onclick="showScreen('achievements')" data-screen="achievements"><span>🏆</span><span>الإنجازات</span></button>
+    <button class="nav-item" onclick="showScreen('analytics')" data-screen="analytics"><span>📈</span><span>الإحصائيات</span></button>
     <button class="nav-item" onclick="showScreen('settings')" data-screen="settings"><span>⚙️</span><span>الإعدادات</span></button>
   </nav>
 

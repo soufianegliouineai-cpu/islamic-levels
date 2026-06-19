@@ -663,9 +663,89 @@ body {
   animation: levelUp 0.5s ease;
 }
 
+/* Analytics Grid */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.analytics-item {
+  text-align: center;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 12px;
+}
+
+.analytics-value {
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.analytics-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Charts */
+.activity-chart, .weekly-chart {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  height: 120px;
+  padding: 8px 0;
+}
+
+.chart-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.chart-fill {
+  width: 24px;
+  min-height: 8px;
+  border-radius: 4px;
+  transition: height 0.3s ease;
+}
+
+.chart-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Goals */
+.goals-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.goal-item:last-child {
+  border-bottom: none !important;
+}
+
+/* Confetti */
+.confetti {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  top: -10px;
+  z-index: 9999;
+  animation: confetti-fall linear forwards;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
 /* Responsive */
 @media (max-width: 400px) {
-  .stats-grid {
+  .stats-grid, .analytics-grid {
     grid-template-columns: 1fr 1fr;
   }
   
