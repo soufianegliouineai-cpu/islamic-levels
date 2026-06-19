@@ -681,6 +681,16 @@ h1, h2, h3, h4, h5, h6 {
   animation: confetti-fall linear forwards;
 }
 
+/* ==================== SCREENS ==================== */
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+  opacity: 1;
+}
+
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 400px) {
   .stats-grid, .analytics-grid {
