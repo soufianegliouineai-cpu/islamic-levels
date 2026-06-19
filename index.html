@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#8B5CF6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="تتبع تقدمك الإيماني يوميًا - 5 مستويات إيمانية مع مهام يومية وجواهر وسلاسل">
+  
+  <title>🌟 المستويات الإيمانية</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <h1>🌟 المستويات الإيمانية</h1>
+    <p>اختر مستواك وابدأ رحلتك الآن!</p>
+  </header>
+
+  <!-- Install Banner -->
+  <div class="install-banner" id="installBanner" style="margin: 16px; border-radius: 20px;">
+    <div class="install-text">
+      <h3>📲 تثبيت التطبيق</h3>
+      <p>أضفه إلى شاشة الرئيسية للوصول السريع</p>
+    </div>
+    <button class="install-btn" onclick="installApp()">تثبيت</button>
+  </div>
+
+  <!-- Main Content -->
+  <main class="main">
+    
+    <!-- Home Screen -->
+    <section class="screen active" id="homeScreen">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <p style="font-size: 17px; font-weight: 700;">🎯 اختر المستوى المناسب لك وابدأ تتبع تقدمك اليومي!</p>
+      </div>
+      
+      <div id="levelsContainer"></div>
+      
+      <div class="tip-card">
+        <div class="tip-title">💡 نصيحة ذهبية</div>
+        <div class="tip-text">ابدأ بالمستوى المناسب لك وتدرج تدريجياً. الاستمرارية أهم من السرعة! 🎯</div>
+      </div>
+    </section>
+
+    <!-- Tracker Screen -->
+    <section class="screen" id="trackerScreen">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+          <span style="font-weight: 800;">التقدم اليومي</span>
+          <span style="color: var(--primary); font-weight: 900;" id="progressPercent">0%</span>
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+          <span style="font-size: 13px; color: var(--text-muted);">🔥 السلسلة: <span id="streakCount">0</span></span>
+          <span style="font-size: 13px; color: var(--text-muted);" id="todayDate"></span>
+        </div>
+      </div>
+
+      <div class="card" style="background: #FEF3C7; border-color: #F59E0B; display: none;" id="rewardBanner">
+        <div style="text-align: center; font-weight: 800; color: #92400E;">
+          🎉 مبروك! أكملت يومك وحصلت على <span id="rewardGems">0</span> جواهر!
+        </div>
+      </div>
+
+      <div id="tasksContainer"></div>
+    </section>
+
+    <!-- Dashboard Screen -->
+    <section class="screen" id="dashboardScreen">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(59,130,246,0.15);">📊</div>
+          <div class="stat-value" style="color: #3B82F6;" id="statLevel">1</div>
+          <div class="stat-label">المستوى</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(245,158,11,0.15);">💎</div>
+          <div class="stat-value" style="color: #F59E0B;" id="statGems">0</div>
+          <div class="stat-label">الجواهر</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(249,115,22,0.15);">🔥</div>
+          <div class="stat-value" style="color: #F97316;" id="statStreak">0</div>
+          <div class="stat-label">السلسلة</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(16,185,129,0.15);">📅</div>
+          <div class="stat-value" style="color: #10B981;" id="statDays">0</div>
+          <div class="stat-label">أيام مكتملة</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight: 800; margin-bottom: 12px; text-align: right;">تقدم اليوم</div>
+        <div class="progress-container">
+          <div class="progress-bar" id="dashProgress" style="width: 0%"></div>
+        </div>
+        <div style="text-align: center; margin-top: 8px; font-size: 14px; color: var(--text-muted);" id="dashProgressText">0%</div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight: 800; margin-bottom: 12px; text-align: right;">🏆 الترتيب العالمي</div>
+        <div id="leaderboardPreview"></div>
+      </div>
+    </section>
+
+    <!-- Achievements Screen -->
+    <section class="screen" id="achievementsScreen">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" style="color: var(--primary);" id="achEarned">0</div>
+          <div class="stat-label">مكتسب</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color: var(--warning);" id="achTotal">10</div>
+          <div class="stat-label">إجمالي</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="achievement-grid" id="achievementsGrid"></div>
+      </div>
+    </section>
+
+    <!-- Challenges Screen -->
+    <section class="screen" id="challengesScreen">
+      <div class="card" style="background: var(--primary); color: white; text-align: center;">
+        <div style="font-weight: 800;">التحديات المكتملة</div>
+        <div style="font-size: 36px; font-weight: 900; margin-top: 8px;" id="challengesCount">0/6</div>
+      </div>
+
+      <div id="challengesContainer"></div>
+    </section>
+
+    <!-- Settings Screen -->
+    <section class="screen" id="settingsScreen">
+      <div class="card">
+        <div style="font-weight: 800; margin-bottom: 16px;">الإعدادات</div>
+        
+        <div class="toggle-row">
+          <span class="toggle-label">🌙 الوضع الليلي</span>
+          <div class="toggle" id="darkModeToggle" onclick="toggleDarkMode()"></div>
+        </div>
+        
+        <div class="toggle-row">
+          <span class="toggle-label">🔔 التذكير اليومي</span>
+          <div class="toggle" id="notifToggle" onclick="toggleNotifications()"></div>
+        </div>
+        
+        <div class="toggle-row" style="border: none;">
+          <span class="toggle-label">📤 تصدير البيانات</span>
+          <button class="btn" style="width: auto; padding: 10px 20px; font-size: 14px;" onclick="exportData()">تصدير</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight: 800; margin-bottom: 12px;">المستوى الحالي</div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="levelSelector"></div>
+      </div>
+
+      <button class="btn btn-primary" onclick="resetData()" style="background: var(--danger);">
+        🗑️ مسح جميع البيانات
+      </button>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="nav">
+    <button class="nav-item active" onclick="showScreen('home')" data-screen="home">
+      <span>🏠</span>
+      <span>الرئيسية</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('tracker')" data-screen="tracker">
+      <span>📊</span>
+      <span>التتبع</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('dashboard')" data-screen="dashboard">
+      <span>📈</span>
+      <span>لوحة التحكم</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('achievements')" data-screen="achievements">
+      <span>🏆</span>
+      <span>الإنجازات</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('settings')" data-screen="settings">
+      <span>⚙️</span>
+      <span>الإعدادات</span>
+    </button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>
