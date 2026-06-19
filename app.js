@@ -501,6 +501,58 @@ function approveRequest(requestId) { if (familyManager) { familyManager.approveR
 function rejectRequest(requestId) { if (familyManager) { familyManager.rejectRequest(requestId); renderFamily(); alert('❌ تم الرفض'); } }
 function leaveFamily() { if (confirm('مغادرة العائلة؟')) { state.familyId = null; state.familyRole = null; saveState(); renderFamily(); } }
 
+// ==================== QIBLA ====================
+function renderQibla() {
+  const qiblaContent = document.getElementById('qiblaContent');
+  if (!qiblaContent) return;
+  
+  qiblaContent.innerHTML = `
+    <div class="card" style="background: linear-gradient(135deg, #10B981, #059669); color: white; text-align: center; margin-bottom: 16px;">
+      <div style="font-size: 20px; font-weight: 900;">🧭 اتجاه القبلة</div>
+      <div style="font-size: 14px; opacity: 0.9; margin-top: 4px;">حدد موقعك لتحديد اتجاه القبلة</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div style="width: 150px; height: 150px; border-radius: 50%; border: 4px solid var(--primary); margin: 0 auto 20px; position: relative;">
+        <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: 800;">شمال</div>
+        <div style="position: absolute; bottom: -15px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: 800;">جنوب</div>
+        <div style="position: absolute; left: -15px; top: 50%; transform: translateY(-50%); font-size: 14px; font-weight: 800;">شرق</div>
+        <div style="position: absolute; right: -15px; top: 50%; transform: translateY(-50%); font-size: 14px; font-weight: 800;">غرب</div>
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">🕋</div>
+      </div>
+      <div id="qiblaDirection" style="font-size: 18px; font-weight: 800; margin-bottom: 8px;">جاري تحديد الاتجاه...</div>
+      <div id="qiblaAngle" style="font-size: 14px; color: var(--text-muted);">يرجى تفعيل الموقع</div>
+      <button class="btn btn-primary" style="margin-top: 16px; width: auto; padding: 10px 20px;" onclick="startQibla()">📍 تحديث الموقع</button>
+    </div>
+  `;
+  startQibla();
+}
+
+function startQibla() {
+  const qiblaDirection = document.getElementById('qiblaDirection');
+  const qiblaAngle = document.getElementById('qiblaAngle');
+  if (!navigator.geolocation) {
+    if (qiblaDirection) qiblaDirection.textContent = 'الموقع غير مدعوم';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const kaabaLat = 21.4225, kaabaLng = 39.8262;
+      const dLng = (kaabaLng - lng) * Math.PI / 180;
+      const lat1 = lat * Math.PI / 180, lat2 = kaabaLat * Math.PI / 180;
+      let angle = Math.atan2(Math.sin(dLng), Math.cos(lat1) * Math.tan(lat2) - Math.sin(lat1) * Math.cos(dLng)) * 180 / Math.PI;
+      if (angle < 0) angle += 360;
+      if (qiblaDirection) qiblaDirection.textContent = 'اتجاه القبلة: ' + Math.round(angle) + '°';
+      if (qiblaAngle) qiblaAngle.textContent = 'من الشمال الصافي';
+    },
+    (err) => {
+      if (qiblaDirection) qiblaDirection.textContent = 'يرجى تفعيل خدمة الموقع';
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
 // ==================== REAL GIFT CONVERSION ====================
 function renderGiftConversion() {
   let html = '';
