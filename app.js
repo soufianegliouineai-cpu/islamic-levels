@@ -87,6 +87,27 @@ const SHOP_CATEGORIES = {
       { id: 'charity_mosque', name: 'مسجد', desc: 'بناء مسجد', icon: '🕌', price: 500, type: 'charity' },
       { id: 'charity_orphan', name: 'يتيم', desc: 'كفالة يتيم', icon: '👶', price: 300, type: 'charity' }
     ]
+  },
+  sounds: {
+    title: '🔊 الأصوات', icon: '🔊',
+    items: [
+      { id: 'sound_athan', name: 'أذان مكة', desc: 'صوت أذان المسجد الحرام', icon: '🕌', price: 200, type: 'sound' },
+      { id: 'sound_quran', name: 'تلاوة قرآن', desc: 'تلاوة بصوت جميل', icon: '📖', price: 150, type: 'sound' },
+      { id: 'sound_bell', name: 'جرس', desc: 'جرس مسجد', icon: '🔔', price: 100, type: 'sound' },
+      { id: 'sound_success', name: 'نجاح', desc: 'صوت عند الإنجاز', icon: '✅', price: 80, type: 'sound' },
+      { id: 'sound_click', name: 'نقر', desc: 'صوت النقر', icon: '👆', price: 50, type: 'sound' }
+    ]
+  },
+  gifts: {
+    title: '🎁 الهدايا', icon: '🎁',
+    items: [
+      { id: 'gift_streak', name: 'هدية سلسلة', desc: 'أهدي 7 أيام', icon: '🔥', price: 100, type: 'gift' },
+      { id: 'gift_gems', name: 'هدية جواهر', desc: '50 جوهرة', icon: '💎', price: 80, type: 'gift' },
+      { id: 'gift_level', name: 'هدية مستوى', desc: 'ترقية مستوى', icon: '📈', price: 200, type: 'gift' },
+      { id: 'gift_badge', name: 'هدية شارة', desc: 'شارة مميزة', icon: '🏅', price: 150, type: 'gift' },
+      { id: 'gift_avatar', name: 'هدية صورة', desc: 'صورة رمزية', icon: '👤', price: 120, type: 'gift' },
+      { id: 'gift_freeze', name: 'هدية تجميد', desc: 'تجميد سلسلة', icon: '🧊', price: 60, type: 'gift' }
+    ]
   }
 };
 
