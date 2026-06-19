@@ -836,6 +836,170 @@ async function syncWithSupabase() {
   }
 }
 
+// ==================== ANALYTICS ====================
+function renderAnalytics() {
+  const analytics = new AnalyticsEngine(state);
+  const weekly = analytics.getWeeklySummary();
+  const monthly = analytics.getMonthlySummary();
+  const categoryBreakdown = analytics.getCategoryBreakdown();
+  const levelProgress = analytics.getLevelProgress();
+  const streakAnalysis = analytics.getStreakAnalysis();
+  const achievementProgress = analytics.getAchievementProgress();
+  const timeOfDay = analytics.getTimeOfDayAnalysis();
+  const overallScore = analytics.getOverallScore();
+
+  let html = '';
+
+  // Overall Score
+  html += '<div class="card" style="text-align: center;">';
+  html += '<div style="font-size: 16px; font-weight: 800; margin-bottom: 8px;">📈 النتيجة الإجمالية</div>';
+  html += '<div style="font-size: 48px; font-weight: 900; color: ' + (overallScore >= 70 ? '#10B981' : overallScore >= 40 ? '#F59E0B' : '#EF4444') + ';">' + overallScore + '%</div>';
+  html += '<div style="font-size: 14px; color: var(--text-muted);">' + (overallScore >= 70 ? 'ممتاز! استمر!' : overallScore >= 40 ? 'جيد، يمكنك التحسين' : 'حاول أكثر') + '</div>';
+  html += '</div>';
+
+  // Weekly Summary
+  html += '<div class="card"><div style="font-weight: 800; margin-bottom: 12px;">📅 ملخص الأسبوع</div>';
+  html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">';
+  html += '<div style="text-align: center; padding: 12px; background: var(--bg); border-radius: 12px;"><div style="font-size: 24px; font-weight: 900; color: #10B981;">' + weekly.daysCompleted + '/7</div><div style="font-size: 12px; color: var(--text-muted);">أيام مكتملة</div></div>';
+  html += '<div style="text-align: center; padding: 12px; background: var(--bg); border-radius: 12px;"><div style="font-size: 24px; font-weight: 900; color: #F59E0B;">' + weekly.totalGems + '</div><div style="font-size: 12px; color: var(--text-muted);">جواهر</div></div>';
+  html += '<div style="text-align: center; padding: 12px; background: var(--bg); border-radius: 12px;"><div style="font-size: 24px; font-weight: 900; color: #8B5CF6;">' + weekly.totalXp + '</div><div style="font-size: 12px; color: var(--text-muted);">خبرة</div></div>';
+  html += '<div style="text-align: center; padding: 12px; background: var(--bg); border-radius: 12px;"><div style="font-size: 24px; font-weight: 900; color: #EF4444;">' + weekly.averageCompletion + '%</div><div style="font-size: 12px; color: var(--text-muted);">متوسط الإنجاز</div></div>';
+  html += '</div></div>';
+
+  // Category Breakdown
+  html += '<div class="card"><div style="font-weight: 800; margin-bottom: 12px;">📊 تفصيل العبادات</div>';
+  html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">';
+  html += '<div style="padding: 12px; background: var(--bg); border-radius: 12px;"><div style="font-size: 14px; font-weight: 700;">🕌 الصلوات</div><div style="font-size: 20px; font-weight: 900; color: #10B981;">' + categoryBreakdown.prayers.percentage + '%</div><div style="font-size: 11px; color: var(--text-muted);">' + categoryBreakdown.prayers.completed + '/' + categoryBreakdown.prayers.total + '</div></div>';
+  html += '<div style="padding: 12px; background: var(--bg); border-radius: 12px;"><div style="font-size: 14px; font-weight: 700;">📿 الأذكار</div><div style="font-size: 20px; font-weight: 900; color: #8B5CF6;">' + categoryBreakdown.adhkar.percentage + '%</div><div style="font-size: 11px; color: var(--text-muted);">' + categoryBreakdown.adhkar.completed + '/' + categoryBreakdown.adhkar.total + '</div></div>';
+  html += '<div style="padding: 12px; background: var(--bg); border-radius: 12px;"><div style="font-size: 14px; font-weight: 700;">📖 القرآن</div><div style="font-size: 20px; font-weight: 900; color: #3B82F6;">' + categoryBreakdown.quran.percentage + '%</div><div style="font-size: 11px; color: var(--text-muted);">' + categoryBreakdown.quran.pages + ' صفحة</div></div>';
+  html += '<div style="padding: 12px; background: var(--bg); border-radius: 12px;"><div style="font-size: 14px; font-weight: 700;">📊 المهام</div><div style="font-size: 20px; font-weight: 900; color: #EF4444;">' + categoryBreakdown.tasks.percentage + '%</div><div style="font-size: 11px; color: var(--text-muted);">' + categoryBreakdown.tasks.completed + '/' + categoryBreakdown.tasks.total + '</div></div>';
+  html += '</div></div>';
+
+  // Level Progress
+  html += '<div class="card"><div style="font-weight: 800; margin-bottom: 12px;">🎯 تقدم المستوى</div>';
+  html += '<div style="text-align: center;"><div style="font-size: 16px;">المستوى ' + levelProgress.current + ' → ' + levelProgress.next + '</div>';
+  html += '<div class="progress-container" style="margin: 12px 0;"><div class="progress-bar" style="width: ' + levelProgress.progress + '%;"></div></div>';
+  html += '<div style="font-size: 13px; color: var(--text-muted);">الأيام: ' + levelProgress.daysCompleted + '/' + levelProgress.daysRequired + (levelProgress.remaining > 0 ? ' (متبقي ' + levelProgress.remaining + ' يوم)' : ' ✓ مكتمل!') + '</div></div></div>';
+
+  // Streak Analysis
+  html += '<div class="card"><div style="font-weight: 800; margin-bottom: 12px;">🔥 تحليل السلسلة</div>';
+  html += '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center;">';
+  html += '<div><div style="font-size: 24px; font-weight: 900; color: #EF4444;">' + streakAnalysis.currentStreak + '</div><div style="font-size: 11px; color: var(--text-muted);">السلسلة الحالية</div></div>';
+  html += '<div><div style="font-size: 24px; font-weight: 900; color: #F59E0B;">' + streakAnalysis.longestStreak + '</div><div style="font-size: 11px; color: var(--text-muted);">أطول سلسلة</div></div>';
+  html += '<div><div style="font-size: 24px; font-weight: 900; color: #10B981;">' + streakAnalysis.consistency + '%</div><div style="font-size: 11px; color: var(--text-muted);">الثبات</div></div>';
+  html += '</div></div>';
+
+  // Achievement Progress
+  html += '<div class="card"><div style="font-weight: 800; margin-bottom: 12px;">🏆 الإنجازات</div>';
+  html += '<div style="text-align: center;"><div style="font-size: 32px; font-weight: 900; color: #F59E0B;">' + achievementProgress.earned + '/' + achievementProgress.total + '</div>';
+  html += '<div class="progress-container" style="margin: 12px 0;"><div class="progress-bar" style="width: ' + achievementProgress.percentage + '%; background: linear-gradient(90deg, #F59E0B, #D97706);"></div></div>';
+  if (achievementProgress.nextAchievement) {
+    html += '<div style="font-size: 13px; color: var(--text-muted);">التالي: ' + achievementProgress.nextAchievement.icon + ' ' + achievementProgress.nextAchievement.title + '</div>';
+  }
+  html += '</div></div>';
+
+  // Time of Day Suggestions
+  html += '<div class="card"><div style="font-weight: 800; margin-bottom: 12px;">⏰ اقتراحات ' + timeOfDay.periodArabic + '</div>';
+  html += '<div style="display: flex; flex-wrap: wrap; gap: 8px;">';
+  timeOfDay.suggestions.forEach(s => {
+    html += '<span style="padding: 6px 12px; background: var(--bg); border-radius: 20px; font-size: 13px;">' + s + '</span>';
+  });
+  html += '</div></div>';
+
+  document.getElementById('analyticsContent').innerHTML = html;
+}
+
+// ==================== SEASONAL CHALLENGES ====================
+function renderSeasonal() {
+  seasonalManager.load();
+  const challenges = seasonalManager.getActiveChallenges();
+  
+  let html = '';
+
+  // Active Seasons
+  html += '<div class="card"><div style="font-weight: 800; margin-bottom: 12px;">🌙 المواسم النشطة</div>';
+  html += '<div style="display: flex; flex-wrap: wrap; gap: 8px;">';
+  seasonalManager.checkActiveSeasons().forEach(seasonId => {
+    const season = SEASONAL_CHALLENGES[seasonId];
+    if (season) {
+      html += '<span style="padding: 6px 12px; background: ' + season.color + '; color: white; border-radius: 20px; font-size: 13px; font-weight: 700;">' + season.icon + ' ' + season.title + '</span>';
+    }
+  });
+  html += '</div></div>';
+
+  // Challenges
+  if (challenges.length > 0) {
+    html += '<div class="card"><div style="font-weight: 800; margin-bottom: 12px;">🎯 التحديات النشطة</div>';
+    challenges.forEach(challenge => {
+      const progress = seasonalManager.getProgress(challenge.id);
+      const percentage = Math.min(100, Math.round((progress / challenge.target) * 100));
+      const isComplete = progress >= challenge.target;
+      
+      html += '<div style="margin-bottom: 12px; padding: 12px; border: 1px solid ' + (isComplete ? '#10B981' : 'var(--border)') + '; border-radius: 12px;">';
+      html += '<div style="display: flex; align-items: center; gap: 12px;">';
+      html += '<span style="font-size: 32px;">' + challenge.icon + '</span>';
+      html += '<div style="flex: 1;"><div style="font-weight: 700;">' + challenge.title + '</div>';
+      html += '<div style="font-size: 12px; color: var(--text-muted);">' + challenge.description + '</div>';
+      html += '<div style="font-size: 11px; color: ' + challenge.seasonColor + '; font-weight: 700;">' + challenge.seasonTitle + '</div></div>';
+      html += '<div style="text-align: right;"><div style="font-weight: 800; color: #F59E0B;">💎 ' + challenge.reward + '</div>';
+      html += '<div style="font-size: 12px; color: var(--text-muted);">' + progress + '/' + challenge.target + '</div></div>';
+      html += '</div>';
+      html += '<div class="progress-container" style="margin-top: 8px;"><div class="progress-bar" style="width: ' + percentage + '%; background: ' + (isComplete ? '#10B981' : challenge.seasonColor) + ';"></div></div>';
+      if (isComplete) {
+        html += '<div style="text-align: center; margin-top: 8px; color: #10B981; font-weight: 700;">✅ مكتمل!</div>';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div class="card" style="text-align: center;"><div style="font-size: 48px; margin-bottom: 12px;">🎯</div><div style="font-weight: 800;">لا توجد تحديات نشطة</div><div style="color: var(--text-muted); margin-top: 8px;">تحقق لاحقاً للتحديات الجديدة</div></div>';
+  }
+
+  document.getElementById('seasonalContent').innerHTML = html;
+}
+
+// ==================== COMMUNITY ====================
+function renderCommunity() {
+  communityManager.load();
+  const stats = communityManager.getCommunityStats();
+  const leaderboard = communityManager.getLeaderboard('streak');
+  const userRank = communityManager.getUserRank('streak');
+
+  let html = '';
+
+  // Community Stats
+  html += '<div class="card"><div style="font-weight: 800; margin-bottom: 12px;">📊 إحصائيات المجتمع</div>';
+  html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">';
+  html += '<div style="text-align: center; padding: 12px; background: var(--bg); border-radius: 12px;"><div style="font-size: 24px; font-weight: 900; color: #3B82F6;">' + stats.totalUsers + '</div><div style="font-size: 12px; color: var(--text-muted);">إجمالي المستخدمين</div></div>';
+  html += '<div style="text-align: center; padding: 12px; background: var(--bg); border-radius: 12px;"><div style="font-size: 24px; font-weight: 900; color: #10B981;">' + stats.activeToday + '</div><div style="font-size: 12px; color: var(--text-muted);">نشط اليوم</div></div>';
+  html += '<div style="text-align: center; padding: 12px; background: var(--bg); border-radius: 12px;"><div style="font-size: 24px; font-weight: 900; color: #F59E0B;">' + stats.averageStreak + '</div><div style="font-size: 12px; color: var(--text-muted);">متوسط السلسلة</div></div>';
+  html += '<div style="text-align: center; padding: 12px; background: var(--bg); border-radius: 12px;"><div style="font-size: 24px; font-weight: 900; color: #EF4444;">' + stats.topStreak + '</div><div style="font-size: 12px; color: var(--text-muted);">أطول سلسلة</div></div>';
+  html += '</div></div>';
+
+  // Your Rank
+  html += '<div class="card" style="background: linear-gradient(135deg, #8B5CF6, #EC4899); color: white; text-align: center;">';
+  html += '<div style="font-size: 14px; opacity: 0.9;">ترتيبك</div>';
+  html += '<div style="font-size: 48px; font-weight: 900;">#' + userRank + '</div>';
+  html += '<div style="font-size: 14px; opacity: 0.9;">من أصل ' + stats.totalUsers + ' مستخدم</div>';
+  html += '</div>';
+
+  // Leaderboard
+  html += '<div class="card"><div style="font-weight: 800; margin-bottom: 12px;">🏆 الترتيب العالمي</div>';
+  leaderboard.slice(0, 10).forEach((user, index) => {
+    const isCurrentUser = user.isCurrentUser;
+    html += '<div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); ' + (isCurrentUser ? 'background: rgba(139, 92, 246, 0.1); border-radius: 8px;' : '') + '">';
+    html += '<div style="width: 32px; font-size: 20px; font-weight: 900; text-align: center;">' + (user.medal || '#' + user.rank) + '</div>';
+    html += '<div style="flex: 1; margin: 0 12px;"><div style="font-weight: 700;">' + user.name + (isCurrentUser ? ' (أنت)' : '') + '</div>';
+    html += '<div style="font-size: 11px; color: var(--text-muted);">المستوى ' + user.level + '</div></div>';
+    html += '<div style="text-align: right;"><div style="font-weight: 800; color: #F97316;">🔥 ' + user.streak + '</div>';
+    html += '<div style="font-size: 11px; color: var(--text-muted);">💎 ' + user.gems + '</div></div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  document.getElementById('communityContent').innerHTML = html;
+}
+
 // ==================== INIT ====================
 function showApp() { document.getElementById('authModal').style.display = 'none'; document.getElementById('appContainer').style.display = 'block'; document.getElementById('headerSubtitle').textContent = 'مرحباً، ' + (authState.user?.name || 'ضيف') + '!'; renderLevels(); updateHeaderGems(); if (state.prayerTimesEnabled) initPrayerTimes(); if (state.equippedTheme) applyTheme(state.equippedTheme); setInterval(updatePrayerBanner, 60000); setTimeout(initSupabase, 1000); }
 document.addEventListener('DOMContentLoaded', () => { const savedAuth = localStorage.getItem('islamicAuth'); if (savedAuth) { authState = JSON.parse(savedAuth); if (authState.isLoggedIn) { loadState(); showApp(); return; } } loadState(); document.getElementById('authModal').style.display = 'flex'; });

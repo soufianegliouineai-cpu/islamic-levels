@@ -287,6 +287,33 @@
         </div>
         <button class="btn btn-primary" onclick="resetData()" style="background: var(--danger); margin-top: 12px;">🗑️ مسح البيانات</button>
       </section>
+
+      <!-- Analytics Screen -->
+      <section class="screen" id="analyticsScreen">
+        <div class="card" style="background: linear-gradient(135deg, #3B82F6, #0891B2); color: white; margin-bottom: 16px; text-align: center;">
+          <div style="font-size: 20px; font-weight: 900;">📊 الإحصائيات المتقدمة</div>
+          <div style="font-size: 14px; opacity: 0.9; margin-top: 4px;">تتبع تقدمك بالتفصيل</div>
+        </div>
+        <div id="analyticsContent"></div>
+      </section>
+
+      <!-- Seasonal Screen -->
+      <section class="screen" id="seasonalScreen">
+        <div class="card" style="background: linear-gradient(135deg, #10B981, #059669); color: white; margin-bottom: 16px; text-align: center;">
+          <div style="font-size: 20px; font-weight: 900;">🎯 التحديات الموسمية</div>
+          <div style="font-size: 14px; opacity: 0.9; margin-top: 4px;">تحديات خاصة بالمواسم</div>
+        </div>
+        <div id="seasonalContent"></div>
+      </section>
+
+      <!-- Community Screen -->
+      <section class="screen" id="communityScreen">
+        <div class="card" style="background: linear-gradient(135deg, #8B5CF6, #DB2777); color: white; margin-bottom: 16px; text-align: center;">
+          <div style="font-size: 20px; font-weight: 900;">👥 المجتمع</div>
+          <div style="font-size: 14px; opacity: 0.9; margin-top: 4px;">تنافس مع المستخدمين</div>
+        </div>
+        <div id="communityContent"></div>
+      </section>
     </main>
 
     <nav class="nav">
@@ -304,6 +331,9 @@
   <script src="family.js"></script>
   <script src="supabase.js"></script>
   <script src="supabase-setup.js"></script>
+  <script src="analytics.js"></script>
+  <script src="seasonal.js"></script>
+  <script src="community.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
