@@ -752,11 +752,11 @@ function renderSettings() {
     ).join('');
   }
 }
-function toggleDarkMode() { state.darkMode = !state.darkMode; updateTheme(); saveState(); }
+function toggleDarkMode() { state.darkMode = !state.darkMode; updateTheme(); saveState(); renderSettings(); }
 function updateTheme() { document.documentElement.setAttribute('data-theme', state.darkMode ? 'dark' : 'light'); }
-function toggleNotifications() { state.notifEnabled = !state.notifEnabled; if (state.notifEnabled && 'Notification' in window) Notification.requestPermission(); saveState(); }
-function toggleSound() { state.soundEnabled = !state.soundEnabled; saveState(); }
-function toggleVibration() { state.vibrationEnabled = !state.vibrationEnabled; vibrate(100); saveState(); }
+function toggleNotifications() { state.notifEnabled = !state.notifEnabled; if (state.notifEnabled && 'Notification' in window) Notification.requestPermission(); saveState(); renderSettings(); }
+function toggleSound() { state.soundEnabled = !state.soundEnabled; saveState(); renderSettings(); }
+function toggleVibration() { state.vibrationEnabled = !state.vibrationEnabled; vibrate(100); saveState(); renderSettings(); }
 function exportData() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })); a.download = 'backup-' + getToday() + '.json'; a.click(); }
 function importData() { const input = document.createElement('input'); input.type = 'file'; input.accept = '.json'; input.onchange = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (ev) => { try { state = { ...getDefaultState(), ...JSON.parse(ev.target.result) }; saveState(); location.reload(); } catch { alert('❌ ملف غير صالح'); } }; reader.readAsText(file); } }; input.click(); }
 
