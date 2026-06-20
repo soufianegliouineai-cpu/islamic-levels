@@ -172,8 +172,25 @@ const DUAS = {
 function generateCode() { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let r = ''; for (let i = 0; i < 8; i++) r += c[Math.floor(Math.random() * c.length)]; return r; }
 function getToday() { return new Date().toISOString().split('T')[0]; }
 function vibrate(pattern) { if (state.vibrationEnabled && navigator.vibrate) navigator.vibrate(pattern || 50); }
-function playSound() { if (state.soundEnabled) { try { new Audio('data:audio/wav;base64,UklGRl9vT19teleQAVlbmV0ZAAAAAA=').play().catch(() => {}); } catch(e) {} } }
-function getDefaultState() { return { level: 1, xp: 0, streak: 0, longestStreak: 0, gems: 0, totalDays: 0, lastDate: null, todayTasks: [], completedChallenges: [], achievements: [], darkMode: false, notifEnabled: false, soundEnabled: true, vibrationEnabled: true, referralCode: generateCode(), totalShared: 0, streakFreezes: 0, dailyHistory: [], goals: [], totalPrayers: 0, totalQuran: 0, totalDhikr: 0, lastSync: null, prayerTimesEnabled: true, location: null, todayPrayers: {}, todayAdhkar: {}, tasbihCount: 0, tasbihTotal: 0, tasbihText: 'سبحان الله وبحمده', tasbihTarget: 33, dailyGoals: [], purchasedItems: [], equippedAvatar: null, equippedTheme: null, equippedBadge: null, doubleXPTimer: 0, shieldActive: false, lastLoginDate: null, loginStreak: 0, totalLogins: 0, dailyRewardClaimed: false, charityTotal: 0, familyId: null, familyRole: null, parentId: null, childId: null }; }
+const clickSound = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=');
+function playSound() {
+  if (!state.soundEnabled) return;
+  try {
+    clickSound.currentTime = 0;
+    clickSound.play().catch(() => {});
+  } catch(e) {}
+}
+function requestNotificationPermission() { return ('Notification' in window) ? Notification.requestPermission() : Promise.resolve('denied'); }
+function scheduleNotificationsIfEnabled() {
+  if (!state.notifEnabled || !('Notification' in window) || Notification.permission !== 'granted') return;
+  if (typeof notificationService !== 'undefined') {
+    notificationService.scheduleDailyReminders(state.prayerTimes || JSON.parse(localStorage.getItem('cachedPrayerTimes') || '{}'));
+  }
+}
+function clearNotifications() {
+  if (typeof notificationService !== 'undefined') notificationService.clearAll();
+}
+function getDefaultState() { return { level: 1, xp: 0, streak: 0, longestStreak: 0, gems: 0, totalDays: 0, lastDate: null, todayTasks: [], completedChallenges: [], achievements: [], darkMode: false, notifEnabled: false, soundEnabled: true, vibrationEnabled: true, referralCode: generateCode(), totalShared: 0, streakFreezes: 0, dailyHistory: [], goals: [], totalPrayers: 0, totalQuran: 0, totalDhikr: 0, lastSync: null, prayerTimesEnabled: true, prayerTimes: null, location: null, todayPrayers: {}, todayAdhkar: {}, tasbihCount: 0, tasbihTotal: 0, tasbihText: 'سبحان الله وبحمده', tasbihTarget: 33, dailyGoals: [], purchasedItems: [], equippedAvatar: null, equippedTheme: null, equippedBadge: null, doubleXPTimer: 0, shieldActive: false, lastLoginDate: null, loginStreak: 0, totalLogins: 0, dailyRewardClaimed: false, charityTotal: 0, familyId: null, familyRole: null, parentId: null, childId: null }; }
 function loadState() { const s = localStorage.getItem('islamicLevels'); if (s) state = { ...getDefaultState(), ...JSON.parse(s) }; if (!state.referralCode) state.referralCode = generateCode(); if (!state.dailyHistory) state.dailyHistory = []; if (!state.todayPrayers) state.todayPrayers = {}; if (!state.todayAdhkar) state.todayAdhkar = {}; if (!state.purchasedItems) state.purchasedItems = []; checkDailyLogin(); updateTheme(); }
 function saveState() { localStorage.setItem('islamicLevels', JSON.stringify(state)); }
 
@@ -207,13 +224,36 @@ function showScreen(name) {
   const navItem = document.querySelector('[data-screen="' + name + '"]');
   if (navItem) navItem.classList.add('active');
   vibrate(30);
-  const renderers = { tracker: renderTracker, prayer: renderPrayerTracker, adhkar: renderAdhkarCategories, quran: renderQuran, profile: renderProfile, settings: renderSettings, tasbih: renderTasbih, shop: renderShop, dua: renderDuaBook, family: renderFamily, gift: renderGiftConversion, messages: renderMessages, analytics: renderAnalytics, seasonal: renderSeasonal, community: renderCommunity, qibla: renderQibla };
+  const renderers = { home: renderLevels, tracker: renderTracker, prayer: renderPrayerTracker, adhkar: renderAdhkarCategories, quran: renderQuran, profile: renderProfile, settings: renderSettings, tasbih: renderTasbih, shop: renderShop, dua: renderDuaBook, family: renderFamily, gift: renderGiftConversion, messages: renderMessages, analytics: renderAnalytics, seasonal: renderSeasonal, community: renderCommunity, qibla: renderQibla, dashboard: renderDashboard };
   if (renderers[name]) renderers[name]();
 }
 
 // ==================== HOME ====================
 function renderLevels() { document.getElementById('levelsContainer').innerHTML = LEVELS.map(level => { const unlock = checkLevelUnlock(state); const isLocked = level.id > state.level && !state.purchasedItems.includes('unlock_level_' + level.id); return '<div class="level-card" style="' + (isLocked ? 'opacity: 0.6;' : '') + '" onclick="' + (isLocked ? '' : 'selectLevel(' + level.id + ')') + '"><div class="level-gradient" style="background: linear-gradient(135deg, ' + level.color[0] + ', ' + level.color[1] + ');"><div class="level-emoji">' + level.icon + '</div><div class="level-name">' + level.title + '</div><div style="display: flex; justify-content: space-between; margin-top: 8px;"><span style="font-size: 12px; opacity: 0.9;">⏱️ ' + level.duration + '</span><span style="font-size: 12px; opacity: 0.9;">💎 ' + level.reward + ' | ⭐ ' + level.xp + ' XP</span></div>' + (isLocked ? '<div style="font-size: 12px; margin-top: 8px;">🔒 ' + (unlock.reason || 'مقفل') + '</div>' : '') + '</div></div>'; }).join(''); }
 function selectLevel(levelId) { state.level = levelId; state.todayTasks = []; saveState(); showScreen('tracker'); }
+
+// ==================== DASHBOARD ====================
+function renderDashboard() {
+  const level = LEVELS.find(l => l.id === state.level);
+  const totalTasks = level ? level.sections.reduce((sum, s) => sum + s.tasks.length, 0) : 0;
+  const completedTasks = state.todayTasks.length;
+  const pct = totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  document.getElementById('statLevel').textContent = state.level;
+  document.getElementById('statGems').textContent = state.gems;
+  document.getElementById('statStreak').textContent = state.streak;
+  document.getElementById('statDays').textContent = state.totalDays;
+  document.getElementById('dashProgress').style.width = pct + '%';
+  const preview = document.getElementById('leaderboardPreview');
+  if (!preview) return;
+  const leaders = [
+    { name: 'أحمد', xp: Math.max(state.xp + 500, 1200) },
+    { name: 'خالد', xp: Math.max(state.xp + 300, 900) },
+    { name: 'أنت', xp: state.xp, me: true },
+    { name: 'يوسف', xp: Math.max(state.xp - 100, 400) },
+    { name: 'عمر', xp: Math.max(state.xp - 250, 200) }
+  ].sort((a, b) => b.xp - a.xp);
+  preview.innerHTML = '<div style="display: flex; flex-direction: column; gap: 8px;">' + leaders.map((u, i) => '<div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: ' + (u.me ? 'var(--primary-light)' : 'var(--bg)') + '; border-radius: 10px; border: ' + (u.me ? '1px solid var(--primary)' : '1px solid transparent') + ';">' + '<div style="display: flex; align-items: center; gap: 8px;"><span style="font-weight: 800; color: var(--text-muted); width: 24px;">#' + (i + 1) + '</span><span style="font-weight: 700;">' + (u.me ? '👤 ' : '🥇 ') + u.name + '</span></div>' + '<span style="font-weight: 800; color: var(--primary);">' + u.xp + ' XP</span></div>').join('') + '</div>';
+}
 
 // ==================== TRACKER ====================
 function renderTracker() {
@@ -274,7 +314,7 @@ function toggleTask(taskId) {
     }
     playSound(); vibrate(50);
   } else { state.todayTasks.splice(idx, 1); }
-  saveState(); renderTracker(); updateHeaderGems();
+  saveState(); renderTracker(); updateHeaderGems(); playSound();
 }
 
 function updateProgress() {
@@ -754,12 +794,24 @@ function renderSettings() {
 }
 function toggleDarkMode() { state.darkMode = !state.darkMode; updateTheme(); saveState(); renderSettings(); }
 function updateTheme() { document.documentElement.setAttribute('data-theme', state.darkMode ? 'dark' : 'light'); }
-function toggleNotifications() { state.notifEnabled = !state.notifEnabled; if (state.notifEnabled && 'Notification' in window) Notification.requestPermission(); saveState(); renderSettings(); }
-function toggleSound() { state.soundEnabled = !state.soundEnabled; saveState(); renderSettings(); }
+function toggleNotifications() {
+  state.notifEnabled = !state.notifEnabled;
+  if (state.notifEnabled && 'Notification' in window) {
+    Notification.requestPermission().then(permission => {
+      if (permission === 'granted') {
+        scheduleNotificationsIfEnabled();
+      } else {
+        state.notifEnabled = false;
+      }
+      saveState(); renderSettings();
+    });
+    return;
+  }
+  if (!state.notifEnabled) clearNotifications();
+  saveState(); renderSettings();
+}
+function toggleSound() { state.soundEnabled = !state.soundEnabled; playSound(); saveState(); renderSettings(); }
 function toggleVibration() { state.vibrationEnabled = !state.vibrationEnabled; vibrate(100); saveState(); renderSettings(); }
-function exportData() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })); a.download = 'backup-' + getToday() + '.json'; a.click(); }
-function importData() { const input = document.createElement('input'); input.type = 'file'; input.accept = '.json'; input.onchange = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (ev) => { try { state = { ...getDefaultState(), ...JSON.parse(ev.target.result) }; saveState(); location.reload(); } catch { alert('❌ ملف غير صالح'); } }; reader.readAsText(file); } }; input.click(); }
-
 // ==================== DATA MANAGEMENT ====================
 function exportData() {
   const data = JSON.stringify(state, null, 2);

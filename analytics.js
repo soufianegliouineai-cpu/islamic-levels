@@ -168,9 +168,7 @@ class AnalyticsEngine {
   }
 }
 
-function getToday() {
-  return new Date().toISOString().split('T')[0];
-}
+// getToday() is defined globally in app.js
 
 function flattenTasks(levelId) {
   const level = LEVELS.find(l => l.id === levelId);
