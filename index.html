@@ -13,6 +13,8 @@
   <link rel="stylesheet" href="premium-styles.css">
 </head>
 <body>
+  <a href="#main" class="skip-link">تخطي إلى المحتوى</a>
+  <div id="toastRegion" aria-live="polite" aria-atomic="true" style="position: fixed; top: 80px; left: 16px; right: 16px; z-index: 9999; pointer-events: none;"></div>
   <!-- Premium Splash Screen -->
   <div id="splashScreen" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; transition: opacity 0.5s ease;">
     <div style="text-align: center;">
@@ -41,16 +43,21 @@
         <p style="color: var(--text-muted); margin-top: 8px;">رفيقك اليومي في العبادات</p>
       </div>
       <div id="loginForm">
-        <input type="email" id="authEmail" placeholder="البريد الإلكتروني" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 12px; font-size: 16px; text-align: right;" />
-        <input type="password" id="authPassword" placeholder="كلمة المرور" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 16px; font-size: 16px; text-align: right;" />
+        <label for="authEmail" class="visually-hidden">البريد الإلكتروني</label>
+        <input type="email" id="authEmail" autocomplete="email" aria-label="البريد الإلكتروني" placeholder="البريد الإلكتروني" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 12px; font-size: 16px; text-align: right;" />
+        <label for="authPassword" class="visually-hidden">كلمة المرور</label>
+        <input type="password" id="authPassword" autocomplete="current-password" aria-label="كلمة المرور" placeholder="كلمة المرور" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 16px; font-size: 16px; text-align: right;" />
         <button class="btn btn-primary" onclick="login()">تسجيل الدخول</button>
         <p style="text-align: center; margin-top: 16px; color: var(--text-muted);">ليس لديك حساب؟ <a href="#" onclick="showRegister()" style="color: var(--primary); font-weight: 700;">إنشاء</a></p>
         <p style="text-align: center; margin-top: 8px;"><a href="#" onclick="guestLogin()" style="color: var(--text-muted); font-size: 14px;">الدخول كضيف</a></p>
       </div>
       <div id="registerForm" style="display: none;">
-        <input type="text" id="regName" placeholder="الاسم" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 12px; font-size: 16px; text-align: right;" />
-        <input type="email" id="regEmail" placeholder="البريد الإلكتروني" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 12px; font-size: 16px; text-align: right;" />
-        <input type="password" id="regPassword" placeholder="كلمة المرور" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 16px; font-size: 16px; text-align: right;" />
+        <label for="regName" class="visually-hidden">الاسم</label>
+        <input type="text" id="regName" autocomplete="name" aria-label="الاسم" placeholder="الاسم" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 12px; font-size: 16px; text-align: right;" />
+        <label for="regEmail" class="visually-hidden">البريد الإلكتروني</label>
+        <input type="email" id="regEmail" autocomplete="email" aria-label="البريد الإلكتروني" placeholder="البريد الإلكتروني" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 12px; font-size: 16px; text-align: right;" />
+        <label for="regPassword" class="visually-hidden">كلمة المرور</label>
+        <input type="password" id="regPassword" autocomplete="new-password" aria-label="كلمة المرور" placeholder="كلمة المرور" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 16px; font-size: 16px; text-align: right;" />
         <button class="btn btn-primary" onclick="register()">إنشاء حساب</button>
         <p style="text-align: center; margin-top: 16px; color: var(--text-muted);">لديك حساب؟ <a href="#" onclick="showLogin()" style="color: var(--primary); font-weight: 700;">دخول</a></p>
       </div>
@@ -72,7 +79,7 @@
       </div>
     </header>
 
-    <main class="main">
+    <main id="main" class="main">
       <!-- Prayer Times Banner -->
       <div class="card" id="prayerTimesCard" style="display: none; margin-bottom: 16px; background: linear-gradient(135deg, #10B981, #059669); color: white;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -338,23 +345,23 @@
     </main>
 
     <nav class="nav">
-      <button class="nav-item active" onclick="showScreen('home')" data-screen="home">
+      <button class="nav-item active" onclick="showScreen('home')" data-screen="home" aria-label="الرئيسية">
         <span class="nav-icon" style="display: inline-flex; width: 24px; height: 24px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
         <span>الرئيسية</span>
       </button>
-      <button class="nav-item" onclick="showScreen('tracker')" data-screen="tracker">
+      <button class="nav-item" onclick="showScreen('tracker')" data-screen="tracker" aria-label="تتبع العبادات">
         <span class="nav-icon" style="display: inline-flex; width: 24px; height: 24px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
         <span>التتبع</span>
       </button>
-      <button class="nav-item" onclick="showScreen('shop')" data-screen="shop">
+      <button class="nav-item" onclick="showScreen('shop')" data-screen="shop" aria-label="المتجر والمكافآت">
         <span class="nav-icon" style="display: inline-flex; width: 24px; height: 24px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
         <span>المتجر</span>
       </button>
-      <button class="nav-item" onclick="showScreen('adhkar')" data-screen="adhkar">
+      <button class="nav-item" onclick="showScreen('adhkar')" data-screen="adhkar" aria-label="الأذكار">
         <span class="nav-icon" style="display: inline-flex; width: 24px; height: 24px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
         <span>الأذكار</span>
       </button>
-      <button class="nav-item" onclick="showScreen('settings')" data-screen="settings">
+      <button class="nav-item" onclick="showScreen('settings')" data-screen="settings" aria-label="الإعدادات">
         <span class="nav-icon" style="display: inline-flex; width: 24px; height: 24px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
         <span>الإعدادات</span>
       </button>

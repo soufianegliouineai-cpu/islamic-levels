@@ -181,3 +181,61 @@ function flattenTasks(levelId) {
   });
   return tasks;
 }
+
+/* Monitoring & Crash Logging */
+(function initMonitoring() {
+  const MAX_LOGS = 50;
+  const KEY = 'il_monitoring_logs';
+
+  function loadQueue() {
+    try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; }
+  }
+
+  function saveQueue(queue) {
+    try { localStorage.setItem(KEY, JSON.stringify(queue.slice(-MAX_LOGS))); } catch (e) {}
+  }
+
+  function pushLog(entry) {
+    const queue = loadQueue();
+    queue.push(entry);
+    saveQueue(queue);
+  }
+
+  window.logEvent = function(name, data) {
+    const entry = { t: new Date().toISOString(), type: 'event', name, data };
+    pushLog(entry);
+    if (window.SUPABASE_URL && typeof logToSupabase === 'function') {
+      try { logToSupabase('events', entry); } catch (e) {}
+    }
+  };
+
+  window.logError = function(err, context) {
+    const entry = {
+      t: new Date().toISOString(),
+      type: 'error',
+      context: context || '',
+      message: (err && err.message) || String(err),
+      stack: (err && err.stack) || null,
+      url: location.href,
+      ua: navigator.userAgent
+    };
+    pushLog(entry);
+    if (typeof console !== 'undefined') console.error('[Monitoring]', entry.context, err);
+  };
+
+  window.addEventListener('error', function(e) {
+    window.logError(e.error || e.message, 'global_error');
+  });
+
+  window.addEventListener('unhandledrejection', function(e) {
+    window.logError(e.reason, 'unhandled_promise_rejection');
+  });
+
+  // Application lifecycle logging
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => window.logEvent('app_load', { stage: 'dom' }));
+  } else {
+    window.logEvent('app_load', { stage: 'dom' });
+  }
+  window.addEventListener('load', () => window.logEvent('app_load', { stage: 'window' }));
+})();
