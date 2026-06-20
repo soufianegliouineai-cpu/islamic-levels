@@ -2,11 +2,14 @@
 
 class SupabaseService {
   constructor() {
-    // Get URL and key from environment or window config
-    this.url = (typeof window !== 'undefined' && window.SUPABASE_URL) || 'https://poannvzbffghwldwvjxk.supabase.co';
-    this.key = (typeof window !== 'undefined' && window.SUPABASE_KEY) || 'sb_publishable_EehuSICW6DcDhEwl6DvjHA_aSQiQMRi';
+    this.url = (typeof window !== 'undefined' && window.SUPABASE_URL);
+    this.key = (typeof window !== 'undefined' && window.SUPABASE_KEY);
     this.online = navigator.onLine;
     this.cache = {};
+
+    if (!this.url || !this.key) {
+      console.warn('[Supabase] SUPABASE_URL or SUPABASE_KEY not configured. Sync features disabled. Set them via window.SUPABASE_URL / window.SUPABASE_KEY or environment injection.');
+    }
     
     // Listen for online/offline
     window.addEventListener('online', () => {
@@ -23,6 +26,10 @@ class SupabaseService {
 
   // ==================== HTTP HELPERS ====================
   async request(endpoint, options = {}) {
+    if (!this.url || !this.key) {
+      throw new Error('Supabase URL or key not configured');
+    }
+
     const url = this.url + '/rest/v1/' + endpoint;
     const headers = {
       'apikey': this.key,

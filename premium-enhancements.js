@@ -1,5 +1,10 @@
 // ==================== PREMIUM ENHANCEMENTS ====================
 
+function __peEscapeHtml(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 // 1. Premium Loading States
 class LoadingStates {
   static showSkeleton(containerId, type = 'card') {
@@ -57,7 +62,7 @@ class ErrorHandler {
     errorDiv.innerHTML = `
       <div style="display: flex; align-items: center; gap: 12px;">
         <span style="font-size: 20px;">⚠️</span>
-        <span style="font-weight: 600;">${message}</span>
+        <span style="font-weight: 600;">${__peEscapeHtml(message)}</span>
       </div>
       ${retryCallback ? '<button onclick="this.parentElement.remove()" style="background: white; color: #EF4444; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700;">إعادة</button>' : ''}
     `;
@@ -92,7 +97,7 @@ class SuccessNotification {
     
     notif.innerHTML = `
       <span style="font-size: 24px;">${icon}</span>
-      <span style="font-weight: 700; font-size: 15px;">${message}</span>
+      <span style="font-weight: 700; font-size: 15px;">${__peEscapeHtml(message)}</span>
     `;
     
     document.body.appendChild(notif);

@@ -1,9 +1,23 @@
-const CACHE_NAME = 'islamic-levels-v1';
+const CACHE_NAME = 'islamic-levels-v2';
 const ASSETS = [
   '/',
   '/index.html',
   '/styles.css',
+  '/premium-styles.css',
+  '/premium-redesign.css',
   '/app.js',
+  '/data.js',
+  '/analytics.js',
+  '/family.js',
+  '/community.js',
+  '/seasonal.js',
+  '/notifications.js',
+  '/prayer-times.js',
+  '/supabase.js',
+  '/supabase-setup.js',
+  '/premium-enhancements.js',
+  '/premium-icons.js',
+  '/advanced-features.js',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png'

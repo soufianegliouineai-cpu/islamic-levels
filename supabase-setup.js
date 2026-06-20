@@ -4,12 +4,13 @@
 
 class SupabaseSetup {
   constructor() {
-    this.url = 'https://poannvzbffghwldwvjxk.supabase.co';
-    this.key = 'sb_publishable_EehuSICW6DcDhEwl6DvjHA_aSQiQMRi';
+    this.url = (typeof window !== 'undefined' && window.SUPABASE_URL) || '';
+    this.key = (typeof window !== 'undefined' && window.SUPABASE_KEY) || '';
     this.tablesExist = false;
   }
 
   async checkTables() {
+    if (!this.url || !this.key) return {};
     const tables = ['users', 'families', 'family_members', 'messages'];
     const results = {};
     for (const table of tables) {

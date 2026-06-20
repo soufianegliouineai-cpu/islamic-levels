@@ -190,6 +190,21 @@ function scheduleNotificationsIfEnabled() {
 function clearNotifications() {
   if (typeof notificationService !== 'undefined') notificationService.clearAll();
 }
+
+// Security helpers
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+function hashLocalPassword(password) {
+  let hash = 0;
+  for (let i = 0; i < password.length; i++) {
+    const char = password.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return 'h_' + Math.abs(hash).toString(36);
+}
 function getDefaultState() { return { level: 1, xp: 0, streak: 0, longestStreak: 0, gems: 0, totalDays: 0, lastDate: null, todayTasks: [], completedChallenges: [], achievements: [], darkMode: false, notifEnabled: false, soundEnabled: true, vibrationEnabled: true, referralCode: generateCode(), totalShared: 0, streakFreezes: 0, dailyHistory: [], goals: [], totalPrayers: 0, totalQuran: 0, totalDhikr: 0, lastSync: null, prayerTimesEnabled: true, prayerTimes: null, location: null, todayPrayers: {}, todayAdhkar: {}, tasbihCount: 0, tasbihTotal: 0, tasbihText: 'سبحان الله وبحمده', tasbihTarget: 33, dailyGoals: [], purchasedItems: [], equippedAvatar: null, equippedTheme: null, equippedBadge: null, doubleXPTimer: 0, shieldActive: false, lastLoginDate: null, loginStreak: 0, totalLogins: 0, dailyRewardClaimed: false, charityTotal: 0, familyId: null, familyRole: null, parentId: null, childId: null }; }
 function loadState() { const s = localStorage.getItem('islamicLevels'); if (s) state = { ...getDefaultState(), ...JSON.parse(s) }; if (!state.referralCode) state.referralCode = generateCode(); if (!state.dailyHistory) state.dailyHistory = []; if (!state.todayPrayers) state.todayPrayers = {}; if (!state.todayAdhkar) state.todayAdhkar = {}; if (!state.purchasedItems) state.purchasedItems = []; checkDailyLogin(); updateTheme(); }
 function saveState() { localStorage.setItem('islamicLevels', JSON.stringify(state)); }
@@ -197,8 +212,8 @@ function saveState() { localStorage.setItem('islamicLevels', JSON.stringify(stat
 // ==================== AUTH ====================
 function showLogin() { document.getElementById('loginForm').style.display = 'block'; document.getElementById('registerForm').style.display = 'none'; }
 function showRegister() { document.getElementById('loginForm').style.display = 'none'; document.getElementById('registerForm').style.display = 'block'; }
-function login() { const e = document.getElementById('authEmail').value; const p = document.getElementById('authPassword').value; if (!e || !p) { alert('أدخل البريد وكلمة المرور'); return; } const users = JSON.parse(localStorage.getItem('islamicUsers') || '[]'); const user = users.find(u => u.email === e && u.password === p); if (user) { authState = { isLoggedIn: true, user, isGuest: false }; localStorage.setItem('islamicAuth', JSON.stringify(authState)); loadUserData(user.id); showApp(); } else alert('بيانات الدخول غير صحيحة'); }
-function register() { const n = document.getElementById('regName').value; const e = document.getElementById('regEmail').value; const p = document.getElementById('regPassword').value; if (!n || !e || !p) { alert('أكمل جميع الحقول'); return; } const users = JSON.parse(localStorage.getItem('islamicUsers') || '[]'); if (users.find(u => u.email === e)) { alert('البريد مسجل مسبقاً'); return; } const user = { id: Date.now().toString(), name: n, email: e, password: p }; users.push(user); localStorage.setItem('islamicUsers', JSON.stringify(users)); authState = { isLoggedIn: true, user, isGuest: false }; localStorage.setItem('islamicAuth', JSON.stringify(authState)); state = getDefaultState(); saveUserData(user.id); showApp(); }
+function login() { const e = document.getElementById('authEmail').value; const p = document.getElementById('authPassword').value; if (!e || !p) { alert('أدخل البريد وكلمة المرور'); return; } const users = JSON.parse(localStorage.getItem('islamicUsers') || '[]'); const hashed = hashLocalPassword(p); const user = users.find(u => u.email === e && u.password === hashed); if (user) { authState = { isLoggedIn: true, user, isGuest: false }; localStorage.setItem('islamicAuth', JSON.stringify(authState)); loadUserData(user.id); showApp(); } else alert('بيانات الدخول غير صحيحة'); }
+function register() { const n = document.getElementById('regName').value; const e = document.getElementById('regEmail').value; const p = document.getElementById('regPassword').value; if (!n || !e || !p) { alert('أكمل جميع الحقول'); return; } const users = JSON.parse(localStorage.getItem('islamicUsers') || '[]'); if (users.find(u => u.email === e)) { alert('البريد مسجل مسبقاً'); return; } const user = { id: Date.now().toString(), name: escapeHtml(n), email: e, password: hashLocalPassword(p) }; users.push(user); localStorage.setItem('islamicUsers', JSON.stringify(users)); authState = { isLoggedIn: true, user, isGuest: false }; localStorage.setItem('islamicAuth', JSON.stringify(authState)); state = getDefaultState(); saveUserData(user.id); showApp(); }
 function guestLogin() { authState = { isLoggedIn: true, user: { id: 'guest-' + Date.now(), name: 'ضيف', email: '' }, isGuest: true }; localStorage.setItem('islamicAuth', JSON.stringify(authState)); if (!localStorage.getItem('islamicLevels')) { state = getDefaultState(); saveState(); } else loadState(); showApp(); }
 function logout() { if (confirm('تسجيل الخروج؟')) { authState = { isLoggedIn: false, user: null, isGuest: false }; localStorage.removeItem('islamicAuth'); location.reload(); } }
 function loadUserData(userId) { const s = localStorage.getItem('islamicLevels_' + userId); if (s) state = { ...getDefaultState(), ...JSON.parse(s) }; else { state = getDefaultState(); saveUserData(userId); } }
@@ -252,7 +267,7 @@ function renderDashboard() {
     { name: 'يوسف', xp: Math.max(state.xp - 100, 400) },
     { name: 'عمر', xp: Math.max(state.xp - 250, 200) }
   ].sort((a, b) => b.xp - a.xp);
-  preview.innerHTML = '<div style="display: flex; flex-direction: column; gap: 8px;">' + leaders.map((u, i) => '<div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: ' + (u.me ? 'var(--primary-light)' : 'var(--bg)') + '; border-radius: 10px; border: ' + (u.me ? '1px solid var(--primary)' : '1px solid transparent') + ';">' + '<div style="display: flex; align-items: center; gap: 8px;"><span style="font-weight: 800; color: var(--text-muted); width: 24px;">#' + (i + 1) + '</span><span style="font-weight: 700;">' + (u.me ? '👤 ' : '🥇 ') + u.name + '</span></div>' + '<span style="font-weight: 800; color: var(--primary);">' + u.xp + ' XP</span></div>').join('') + '</div>';
+  preview.innerHTML = '<div style="display: flex; flex-direction: column; gap: 8px;">' + leaders.map((u, i) => '<div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: ' + (u.me ? 'var(--primary-light)' : 'var(--bg)') + '; border-radius: 10px; border: ' + (u.me ? '1px solid var(--primary)' : '1px solid transparent') + ';">' + '<div style="display: flex; align-items: center; gap: 8px;"><span style="font-weight: 800; color: var(--text-muted); width: 24px;">#' + (i + 1) + '</span><span style="font-weight: 700;">' + (u.me ? '👤 ' : '🥇 ') + escapeHtml(u.name) + '</span></div>' + '<span style="font-weight: 800; color: var(--primary);">' + u.xp + ' XP</span></div>').join('') + '</div>';
 }
 
 // ==================== TRACKER ====================
@@ -702,11 +717,11 @@ function renderMessages() {
     const msgs = familyManager.getMessages(state.childId || state.parentId, member.id);
     const lastMsg = msgs[msgs.length - 1];
     
-    html += '<div class="card" style="margin-bottom: 12px; cursor: pointer;" onclick="openChat(\'' + member.id + '\')">';
+    html += '<div class="card" style="margin-bottom: 12px; cursor: pointer;" onclick="openChat(\'' + escapeHtml(member.id) + '\')">';
     html += '<div style="display: flex; align-items: center; gap: 12px;">';
     html += '<div style="width: 40px; height: 40px; border-radius: 50%; background: ' + (member.role === 'parent' ? '#3B82F6' : '#10B981') + '; display: flex; align-items: center; justify-content: center; color: white;">' + (member.role === 'parent' ? '👨' : '👧') + '</div>';
-    html += '<div style="flex: 1;"><div style="font-weight: 700;">' + member.name + '</div>';
-    html += '<div style="font-size: 13px; color: var(--text-muted);">' + (lastMsg ? lastMsg.content.substring(0, 30) + '...' : 'لا توجد رسائل') + '</div></div>';
+    html += '<div style="flex: 1;"><div style="font-weight: 700;">' + escapeHtml(member.name) + '</div>';
+    html += '<div style="font-size: 13px; color: var(--text-muted);">' + (lastMsg ? escapeHtml(lastMsg.content).substring(0, 30) + '...' : 'لا توجد رسائل') + '</div></div>';
     html += '<div style="font-size: 10px; color: var(--text-muted);">' + (lastMsg ? new Date(lastMsg.timestamp).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }) : '') + '</div>';
     html += '</div></div>';
   });
@@ -724,22 +739,22 @@ function openChat(memberId) {
   
   let html = '<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">';
   html += '<button onclick="renderMessages()" style="background: none; border: none; font-size: 24px;">←</button>';
-  html += '<div><div style="font-weight: 800;">' + member.name + '</div><div style="font-size: 12px; color: var(--text-muted);">' + (member.isOnline ? '🟢 متصل' : '⚫ غير متصل') + '</div></div></div>';
-  
+  html += '<div><div style="font-weight: 800;">' + escapeHtml(member.name) + '</div><div style="font-size: 12px; color: var(--text-muted);">' + (member.isOnline ? '🟢 متصل' : '⚫ غير متصل') + '</div></div></div>';
+
   html += '<div style="max-height: 400px; overflow-y: auto; margin-bottom: 16px;">';
   msgs.forEach(msg => {
     const isMine = msg.from === myId;
     html += '<div style="display: flex; justify-content: ' + (isMine ? 'flex-end' : 'flex-start') + '; margin-bottom: 8px;">';
     html += '<div style="max-width: 70%; padding: 10px 14px; border-radius: 16px; background: ' + (isMine ? 'var(--primary)' : 'var(--bg)') + '; color: ' + (isMine ? 'white' : 'var(--text)') + ';">';
-    html += '<div style="font-size: 14px;">' + msg.content + '</div>';
+    html += '<div style="font-size: 14px;">' + escapeHtml(msg.content) + '</div>';
     html += '<div style="font-size: 10px; opacity: 0.7; margin-top: 4px;">' + new Date(msg.timestamp).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }) + '</div>';
     html += '</div></div>';
   });
   html += '</div>';
-  
+
   html += '<div style="display: flex; gap: 8px;">';
   html += '<input type="text" id="chatInput" placeholder="اكتب رسالة..." style="flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 20px; text-align: right;" />';
-  html += '<button class="btn btn-primary" style="width: auto; padding: 12px 20px; border-radius: 20px;" onclick="sendMessage(\'' + memberId + '\')">إرسال</button>';
+  html += '<button class="btn btn-primary" style="width: auto; padding: 12px 20px; border-radius: 20px;" onclick="sendMessage(\'' + escapeHtml(memberId) + '\')">إرسال</button>';
   html += '</div>';
   
   document.getElementById('messagesContent').innerHTML = html;

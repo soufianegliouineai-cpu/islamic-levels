@@ -1,5 +1,10 @@
 // ==================== PREMIUM ICONS & SVG SYSTEM ====================
 
+function __piEscapeHtml(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 // Custom SVG Icons for Islamic App
 const PremiumIcons = {
   // Navigation Icons
@@ -129,7 +134,7 @@ class PremiumToast {
     
     toast.innerHTML = `
       <span style="font-size: 20px;">${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'}</span>
-      <span>${message}</span>
+      <span>${__piEscapeHtml(message)}</span>
     `;
     
     document.body.appendChild(toast);
