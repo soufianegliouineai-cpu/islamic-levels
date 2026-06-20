@@ -10,7 +10,7 @@ let state = {
   tasbihCount: 0, tasbihTotal: 0, tasbihText: 'سبحان الله وبحمده', tasbihTarget: 33,
   dailyGoals: [], purchasedItems: [], equippedAvatar: null, equippedTheme: null, equippedBadge: null,
   doubleXPTimer: 0, shieldActive: false, lastLoginDate: null, loginStreak: 0,
-  totalLogins: 0, dailyRewardClaimed: false, charityTotal: 0,
+  totalLogins: 0, dailyRewardClaimed: false, claimedDailyRewards: [], charityTotal: 0,
   familyId: null, familyRole: null, parentId: null, childId: null
 };
 
@@ -205,7 +205,7 @@ function hashLocalPassword(password) {
   }
   return 'h_' + Math.abs(hash).toString(36);
 }
-function getDefaultState() { return { level: 1, xp: 0, streak: 0, longestStreak: 0, gems: 0, totalDays: 0, lastDate: null, todayTasks: [], completedChallenges: [], achievements: [], darkMode: false, notifEnabled: false, soundEnabled: true, vibrationEnabled: true, referralCode: generateCode(), totalShared: 0, streakFreezes: 0, dailyHistory: [], goals: [], totalPrayers: 0, totalQuran: 0, totalDhikr: 0, lastSync: null, prayerTimesEnabled: true, prayerTimes: null, location: null, todayPrayers: {}, todayAdhkar: {}, tasbihCount: 0, tasbihTotal: 0, tasbihText: 'سبحان الله وبحمده', tasbihTarget: 33, dailyGoals: [], purchasedItems: [], equippedAvatar: null, equippedTheme: null, equippedBadge: null, doubleXPTimer: 0, shieldActive: false, lastLoginDate: null, loginStreak: 0, totalLogins: 0, dailyRewardClaimed: false, charityTotal: 0, familyId: null, familyRole: null, parentId: null, childId: null }; }
+function getDefaultState() { return { level: 1, xp: 0, streak: 0, longestStreak: 0, gems: 0, totalDays: 0, lastDate: null, todayTasks: [], completedChallenges: [], achievements: [], darkMode: false, notifEnabled: false, soundEnabled: true, vibrationEnabled: true, referralCode: generateCode(), totalShared: 0, streakFreezes: 0, dailyHistory: [], goals: [], totalPrayers: 0, totalQuran: 0, totalDhikr: 0, lastSync: null, prayerTimesEnabled: true, prayerTimes: null, location: null, todayPrayers: {}, todayAdhkar: {}, tasbihCount: 0, tasbihTotal: 0, tasbihText: 'سبحان الله وبحمده', tasbihTarget: 33, dailyGoals: [], purchasedItems: [], equippedAvatar: null, equippedTheme: null, equippedBadge: null, doubleXPTimer: 0, shieldActive: false, lastLoginDate: null, loginStreak: 0, totalLogins: 0, dailyRewardClaimed: false, claimedDailyRewards: [], charityTotal: 0, familyId: null, familyRole: null, parentId: null, childId: null }; }
 function loadState() { const s = localStorage.getItem('islamicLevels'); if (s) state = { ...getDefaultState(), ...JSON.parse(s) }; if (!state.referralCode) state.referralCode = generateCode(); if (!state.dailyHistory) state.dailyHistory = []; if (!state.todayPrayers) state.todayPrayers = {}; if (!state.todayAdhkar) state.todayAdhkar = {}; if (!state.purchasedItems) state.purchasedItems = []; checkDailyLogin(); updateTheme(); }
 function saveState() { localStorage.setItem('islamicLevels', JSON.stringify(state)); }
 
@@ -226,8 +226,20 @@ function claimDailyReward() {
   if (state.dailyRewardClaimed) { alert('✅ حصلت على مكافأتك اليومية بالفعل!'); return; }
   const reward = Math.min(10 + (state.loginStreak * 2), 100);
   state.gems += reward; state.xp = (state.xp || 0) + 10; state.dailyRewardClaimed = true;
-  vibrate([100, 50, 100]); saveState(); updateHeaderGems();
+  vibrate([100, 50, 100]); saveState(); updateHeaderGems(); renderShop();
   alert('🎉 مكافأة يومية: +' + reward + ' جوهرة | +10 XP');
+}
+
+function claimRewardItem(itemId) {
+  const item = (SHOP_CATEGORIES.dailyRewards && SHOP_CATEGORIES.dailyRewards.items || []).find(i => i.id === itemId);
+  if (!item) return;
+  if (state.loginStreak < item.day) { alert('🔒 المكافأة غير متاحة بعد. أكمل ' + item.day + ' أيام متتالية.'); return; }
+  if (!state.claimedDailyRewards) state.claimedDailyRewards = [];
+  if (state.claimedDailyRewards.includes(item.id)) { alert('✅ تم ادعاء هذه المكافأة من قبل!'); return; }
+  state.gems += item.reward; state.xp = (state.xp || 0) + item.day;
+  state.claimedDailyRewards.push(item.id);
+  vibrate([100, 50, 100]); saveState(); updateHeaderGems(); renderShop();
+  alert('🎉 ' + item.name + ': +' + item.reward + ' جوهرة | +' + item.day + ' XP');
 }
 
 // ==================== NAVIGATION ====================
@@ -388,7 +400,7 @@ function showShopCategory(cat) {
   if (cat === 'dailyRewards') {
     html += '<div class="card" style="margin-bottom: 12px; background: linear-gradient(135deg, #F59E0B, #D97706); color: white; text-align: center;">';
     html += '<div style="font-size: 16px; font-weight: 800;">🔥 سلسلة تسجيل الدخول: ' + state.loginStreak + ' أيام</div>';
-    html += '<button class="btn" style="width: auto; padding: 10px 20px; margin-top: 12px; background: white; color: #D97706; font-weight: 800;" onclick="claimDailyReward()">' + (state.dailyRewardClaimed ? '✅ تم الإعداد' : '🎁 احصل على مكافأتك') + '</button></div>';
+    html += '<button class="btn" style="width: auto; padding: 10px 20px; margin-top: 12px; background: white; color: #D97706; font-weight: 800;" onclick="claimDailyReward()">' + (state.dailyRewardClaimed ? '✅ تم تحصيل اليومية' : '🎁 ادعُ مكافأتك اليومية') + '</button></div>';
   }
   
   category.items.forEach(item => {
@@ -404,10 +416,22 @@ function showShopCategory(cat) {
     let buttonStyle = '';
     
     if (cat === 'dailyRewards') {
-      // Daily rewards - always "ادعاء" (claim)
-      buttonText = '🎁 ادعاء';
-      buttonAction = 'claimDailyReward()';
-      buttonStyle = 'background: linear-gradient(135deg, #10B981, #059669); color: white;';
+      // Per-streak milestone rewards
+      const claimed = (state.claimedDailyRewards || []).includes(item.id);
+      const locked = state.loginStreak < item.day;
+      if (claimed) {
+        buttonText = '✅ تم الادعاء';
+        buttonAction = '';
+        buttonStyle = 'background: #D1D5DB; color: #6B7280;';
+      } else if (locked) {
+        buttonText = '🔒 يوم ' + item.day;
+        buttonAction = '';
+        buttonStyle = 'background: #E5E7EB; color: #9CA3AF;';
+      } else {
+        buttonText = '🎁 ادعاء';
+        buttonAction = "claimRewardItem('" + item.id + "')";
+        buttonStyle = 'background: linear-gradient(135deg, #10B981, #059669); color: white;';
+      }
     } else if (owned) {
       if (equipped) {
         buttonText = '✅ مُلبس';
@@ -439,8 +463,8 @@ function showShopCategory(cat) {
     html += '<div style="display: flex; align-items: center; gap: 12px;">';
     html += '<div style="width: 50px; height: 50px; border-radius: 12px; background: #F3F4F6; display: flex; align-items: center; justify-content: center; font-size: 28px;">' + item.icon + '</div>';
     html += '<div style="flex: 1; text-align: right;">';
-    html += '<div style="font-weight: 800;">' + item.name + '</div>';
-    html += '<div style="font-size: 12px; color: #6B7280;">' + item.desc + '</div>';
+    html += '<div style="font-weight: 800;">' + escapeHtml(item.name) + '</div>';
+    html += '<div style="font-size: 12px; color: #6B7280;">' + escapeHtml(item.desc) + '</div>';
     if (item.price > 0 && !owned) {
       html += '<div style="font-size: 13px; color: #F59E0B; font-weight: 700; margin-top: 2px;">💎 ' + item.price + '</div>';
     }
