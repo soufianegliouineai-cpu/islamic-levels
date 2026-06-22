@@ -447,7 +447,23 @@ function showScreen(name) {
 }
 
 // ==================== HOME ====================
-function renderLevels() { document.getElementById('levelsContainer').innerHTML = LEVELS.map(level => { const unlock = checkLevelUnlock(state); const isLocked = level.id > state.level && !state.purchasedItems.includes('unlock_level_' + level.id); return '<div class="level-card" style="' + (isLocked ? 'opacity: 0.6;' : '') + '" onclick="' + (isLocked ? '' : 'selectLevel(' + level.id + ')') + '"><div class="level-gradient" style="background: linear-gradient(135deg, ' + level.color[0] + ', ' + level.color[1] + ');"><div class="level-emoji">' + level.icon + '</div><div class="level-name">' + level.title + '</div><div style="display: flex; justify-content: space-between; margin-top: 8px;"><span style="font-size: 12px; opacity: 0.9;">⏱️ ' + level.duration + '</span><span style="font-size: 12px; opacity: 0.9;">💎 ' + level.reward + ' | ⭐ ' + level.xp + ' XP</span></div>' + (isLocked ? '<div style="font-size: 12px; margin-top: 8px;">🔒 ' + (unlock.reason || 'مقفل') + '</div>' : '') + '</div></div>'; }).join(''); }
+function renderLevels() {
+  document.getElementById('levelsContainer').innerHTML = LEVELS.map(level => {
+    const purchased = state.purchasedItems.includes('unlock_level_' + level.id);
+    const required = (typeof LEVEL_REQUIREMENTS !== 'undefined' && LEVEL_REQUIREMENTS[level.id]) || 0;
+    const isLocked = level.id > 1 && level.id > state.level && !purchased && state.totalDays < required;
+    let lockReason = '';
+    if (isLocked) {
+      if (required > 0) {
+        const remaining = Math.max(0, required - state.totalDays);
+        lockReason = '🔒 تحتاج ' + remaining + ' يوم لفتح المستوى ' + level.id;
+      } else {
+        lockReason = '🔒 أكمل المستوى السابق أولاً';
+      }
+    }
+    return '<div class="level-card" style="' + (isLocked ? 'opacity: 0.6;' : '') + '" onclick="' + (isLocked ? '' : 'selectLevel(' + level.id + ')') + '"><div class="level-gradient" style="background: linear-gradient(135deg, ' + level.color[0] + ', ' + level.color[1] + ');"><div class="level-emoji">' + level.icon + '</div><div class="level-name">' + level.title + '</div><div style="display: flex; justify-content: space-between; margin-top: 8px;"><span style="font-size: 12px; opacity: 0.9;">⏱️ ' + level.duration + '</span><span style="font-size: 12px; opacity: 0.9;">💎 ' + level.reward + ' | ⭐ ' + level.xp + ' XP</span></div>' + (isLocked ? '<div style="font-size: 12px; margin-top: 8px;">' + lockReason + '</div>' : '') + '</div></div>';
+  }).join('');
+}
 function selectLevel(levelId) {
   // Enforce level lock client-side (server-side would be authoritative)
   if (!Number.isInteger(levelId) || levelId < 1 || levelId > 5) return;
