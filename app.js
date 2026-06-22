@@ -334,7 +334,13 @@ function clampCounters() {
   state.totalQuran = Math.max(0, Number(state.totalQuran) || 0);
   state.totalDhikr = Math.max(0, Number(state.totalDhikr) || 0);
   state.tasbihTotal = Math.max(0, Number(state.tasbihTotal) || 0);
+  state.tasbihCount = Math.max(0, Math.min(Number(state.tasbihCount) || 0, state.tasbihTarget || 33));
+  state.streakFreezes = Math.max(0, Number(state.streakFreezes) || 0);
+  state.charityTotal = Math.max(0, Number(state.charityTotal) || 0);
   if (!Array.isArray(state.dailyHistory)) state.dailyHistory = [];
+  // Drop malformed history entries and bound the array size.
+  state.dailyHistory = state.dailyHistory.filter(h => h && typeof h.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(h.date));
+  if (state.dailyHistory.length > 30) state.dailyHistory = state.dailyHistory.slice(-30);
 }
 
 // ==================== AUTH ====================
@@ -541,6 +547,9 @@ function toggleTask(taskId) {
 function updateProgress() {
   const level = LEVELS.find(l => l.id === state.level);
   const total = level.sections.reduce((sum, s) => sum + s.tasks.length, 0);
+  // Sanitize: strip any task IDs that aren't valid for the current level
+  // (defends against manually injected IDs in localStorage)
+  state.todayTasks = (state.todayTasks || []).filter(id => Number.isInteger(id) && id >= 0 && id < total);
   const pct = Math.round((state.todayTasks.length / total) * 100);
   document.getElementById('progressPercent').textContent = pct + '%';
   document.getElementById('progressBar').style.width = pct + '%';
@@ -1096,6 +1105,9 @@ function completeDhikr(key, reward, totalCount) {
 function renderQuran() { let html = '<div class="card" style="background: linear-gradient(135deg, #10B981, #059669); color: white; margin-bottom: 16px; text-align: center;"><div style="font-size: 20px; font-weight: 900;">📖 القرآن الكريم</div></div>'; QURAN_PARTS.forEach(part => { html += '<div class="card" style="margin-bottom: 12px;"><div style="font-weight: 800;">الجزء ' + part.id + ': ' + part.name + '</div><div style="font-size: 13px; color: var(--text-muted);">صفحات: ' + part.pages + ' | ' + part.surahs + '</div><button class="btn btn-primary" style="margin-top: 8px;" onclick="logQuran(' + part.id + ')">✓ قرأت</button></div>'; }); document.getElementById('quranPartsContainer').innerHTML = html; }
 function logQuran(partId) {
   rolloverIfNewDay();
+  // Validate partId against the static Quran parts (defends against injected IDs)
+  const validPart = typeof QURAN_PARTS !== 'undefined' && QURAN_PARTS.find(p => p.id === partId);
+  if (!validPart) return;
   const today = getToday();
   const partsKey = 'quranParts_' + today;
   let loggedParts;
