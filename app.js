@@ -1349,6 +1349,21 @@ function resetData() {
   }
 }
 
+// Manual recovery: re-run reconciliation against dailyHistory.
+// Useful if the user sees an inflated streak/totalDays from an old cached
+// app version. Also clears the SW session-storage flag so the page reload
+// picks up the latest code.
+function repairStreak() {
+  rolloverIfNewDay();
+  reconcileStreakWithHistory();
+  clampCounters();
+  // Reset the SW-reload flag so the page reload picks up the latest code.
+  try { sessionStorage.removeItem('il-sw-reload'); } catch (e) {}
+  saveState();
+  showNotification('تم الإصلاح', 'السلسلة: ' + state.streak + ' | الأيام: ' + state.totalDays);
+  renderTracker();
+}
+
 // ==================== ACHIEVEMENTS ====================
 function checkAchievements() { ACHIEVEMENTS.forEach(ach => { if (!state.achievements.includes(ach.id) && ach.check({ level: state.level, streak: state.streak, gems: state.gems, totalDays: state.totalDays, todayPrayers: state.todayPrayers, totalDhikr: state.totalDhikr, totalQuran: state.totalQuran, xp: state.xp || 0 })) { state.achievements.push(ach.id); state.gems += ach.gems; state.xp = (state.xp || 0) + (ach.xp || 0); vibrate([200, 100, 200, 100, 200]); } }); saveState(); }
 

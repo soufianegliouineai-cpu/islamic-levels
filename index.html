@@ -28,6 +28,22 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="premium-styles.css">
   <link rel="stylesheet" href="splash.css">
+  <script>
+    // Force a fresh service worker registration to evict any buggy cached
+    // app.js. The new SW (v7+) is cache-first for static assets so the next
+    // page load will get the latest code and run reconcileStreakWithHistory().
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then(function(reg) {
+        if (reg && reg.active && !navigator.serviceWorker.controller) {
+          // SW is active but not controlling this page — reload once to take over.
+          if (!sessionStorage.getItem('il-sw-reload')) {
+            sessionStorage.setItem('il-sw-reload', '1');
+            location.reload();
+          }
+        }
+      });
+    }
+  </script>
 <script>
 // Delegated click handler — converts data-action elements into event dispatches.
 // Static onclick handlers in this HTML have been replaced with data-action
@@ -346,6 +362,11 @@ document.addEventListener('click', function(e) { __ilDispatch(e.target); });
             <button class="btn btn-primary" style="flex: 1;" data-action="exportData" data-args=[]>تصدير</button>
             <button class="btn btn-success" style="flex: 1;" data-action="importData" data-args=[]>استيراد</button>
           </div>
+        </div>
+        <div class="card" style="margin-top: 12px;">
+          <div style="font-weight: 800; margin-bottom: 8px;">🔧 إصلاح سريع</div>
+          <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">إذا لاحظت أن السلسلة أو عدد الأيام غير صحيحة (مثلاً قفزت فجأة)، اضغط الزر لإعادة الحساب من السجل.</div>
+          <button class="btn" data-action="repairStreak" data-args=[] style="background: var(--warning); color: white; width: 100%; margin-top: 8px;">🔄 إعادة حساب السلسلة</button>
         </div>
         <button class="btn btn-primary" data-action="resetData" data-args=[] style="background: var(--danger); margin-top: 12px;">🗑️ مسح البيانات</button>
       </section>
