@@ -5,6 +5,7 @@ const ASSETS = [
   '/styles.css',
   '/premium-styles.css',
   '/premium-redesign.css',
+  '/splash.css',
   '/app.js',
   '/data.js',
   '/analytics.js',
