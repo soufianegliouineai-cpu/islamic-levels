@@ -297,6 +297,9 @@ function rolloverIfNewDay() {
     // Any completion reward granted on a previous day is no longer rollable; clear guard.
     state.completionRewardedDate = null;
     state.lastCompletionReward = null;
+    // The day has changed so the "finalized" guard from yesterday is also cleared.
+    // The user can re-claim once they complete today's tasks.
+    state.dayFinalizedDate = null;
     saveState();
     return true;
   }
@@ -347,6 +350,7 @@ function loadState() {
   if (!state.purchasedItems) state.purchasedItems = [];
   if (!('completionRewardedDate' in state)) state.completionRewardedDate = null;
   if (!('lastCompletionReward' in state)) state.lastCompletionReward = null;
+  if (!('dayFinalizedDate' in state)) state.dayFinalizedDate = null;
   // Always roll over on load so persisted yesterday's tasks can't be re-credited.
   rolloverIfNewDay();
   // Clamp any corrupted counters back to sane values.
@@ -374,6 +378,7 @@ function clampCounters() {
   state.tasbihCount = Math.max(0, Math.min(Number(state.tasbihCount) || 0, state.tasbihTarget || 33));
   state.streakFreezes = Math.max(0, Number(state.streakFreezes) || 0);
   state.charityTotal = Math.max(0, Number(state.charityTotal) || 0);
+  if (state.dayFinalizedDate != null && !/^\d{4}-\d{2}-\d{2}$/.test(state.dayFinalizedDate)) state.dayFinalizedDate = null;
   if (!Array.isArray(state.dailyHistory)) state.dailyHistory = [];
   // Drop malformed history entries and bound the array size.
   state.dailyHistory = state.dailyHistory.filter(h => h && typeof h.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(h.date));
@@ -634,7 +639,12 @@ function updateProgress() {
   document.getElementById('progressBar').style.width = pct + '%';
   const today = getToday();
   const wasRewardedToday = state.completionRewardedDate === today;
-  if (pct === 100 && !wasRewardedToday) {
+  // Once a day has been either rewarded or rolled-back, it is "finalized":
+  // no further credit is possible until the calendar day actually changes.
+  // Without this guard a user could check -> uncheck -> check repeatedly
+  // within the same day to inflate streak/totalDays.
+  const dayFinalized = state.dayFinalizedDate === today;
+  if (pct === 100 && !wasRewardedToday && !dayFinalized) {
     // Award completion rewards ONCE per calendar day
     state.gems += level.reward;
     state.xp = (state.xp || 0) + (level.xp || 0);
@@ -645,13 +655,16 @@ function updateProgress() {
     // Record the reward details so we can roll back if the user unchecks a task
     state.lastCompletionReward = { date: today, gems: level.reward, xp: level.xp || 0 };
     state.completionRewardedDate = today;
+    state.dayFinalizedDate = today;
     // Append / replace today's history entry (idempotent)
     state.dailyHistory = (state.dailyHistory || []).filter(h => h.date !== today);
     state.dailyHistory.push({ date: today, completed: true, gems: level.reward });
     if (state.dailyHistory.length > 30) state.dailyHistory = state.dailyHistory.slice(-30);
     saveState(); checkAchievements(); showConfetti(); showCompletionCongrats(level); updateHeaderGems();
   } else if (pct < 100 && wasRewardedToday) {
-    // Roll back rewards awarded earlier today (user unchecked a task)
+    // Roll back rewards awarded earlier today (user unchecked a task).
+    // Note: even after rollback, dayFinalizedDate stays set so the user cannot
+    // re-claim by checking again. Re-credit only happens after a real day change.
     const reward = state.lastCompletionReward;
     if (reward && reward.date === today) {
       state.gems = Math.max(0, state.gems - reward.gems);
@@ -662,6 +675,7 @@ function updateProgress() {
       state.dailyHistory = (state.dailyHistory || []).filter(h => h.date !== today);
       state.lastCompletionReward = null;
       state.completionRewardedDate = null;
+      // Keep dayFinalizedDate set so re-claiming is blocked until tomorrow.
       hideCompletionCongrats();
       saveState(); updateHeaderGems();
     }
