@@ -434,3 +434,42 @@ const QURAN_PARTS = [
   { id: 29, name: 'الجزء التاسع والعشرون', pages: '563-582', surahs: 'ص - الزمر' },
   { id: 30, name: 'الجزء الثلاثون', pages: '583-604', surahs: 'غافر - الناس' }
 ];
+
+// Curated Hadith collection (40 Hadith of An-Nawawi + Bukhari selections).
+// Each hadith has id, source, narrator, Arabic text, and category.
+const HADITH_COLLECTION = [
+  { id: 1, source: 'البخاري', narrator: 'عمر بن الخطاب', text: 'إنما الأعمال بالنيات وإنما لكل امرئ ما نوى', category: 'النية' },
+  { id: 2, source: 'البخاري', narrator: 'علي بن أبي طالب', text: 'بني الإسلام على خمس: شهادة أن لا إله إلا الله وأن محمداً رسول الله، وإقام الصلاة، وإيتاء الزكاة، وحج البيت، وصوم رمضان', category: 'أركان الإسلام' },
+  { id: 3, source: 'البخاري', narrator: 'عبد الله بن عمر', text: 'بني الإسلام على خمس ...', category: 'أركان الإسلام' },
+  { id: 4, source: 'البخاري', narrator: 'ابن مسعود', text: 'خلق الله آدم على صورته', category: 'الخلق' },
+  { id: 5, source: 'البخاري', narrator: 'أبو هريرة', text: 'من كان يؤمن بالله واليوم الآخر فليقل خيراً أو ليصمت', category: 'الأخلاق' },
+  { id: 6, source: 'البخاري', narrator: 'النعمان بن بشير', text: 'الحلال بيّن والحرام بيّن', category: 'الحلال والحرام' },
+  { id: 7, source: 'البخاري', narrator: 'أبو هريرة', text: 'لا يؤمن أحدكم حتى يحب لأخيه ما يحب لنفسه', category: 'الإيمان' },
+  { id: 8, source: 'البخاري', narrator: 'عبد الله بن عمرو', text: 'لا يؤمن أحدكم حتى يكون هواه تبعاً لما جئت به', category: 'الإيمان' },
+  { id: 9, source: 'البخاري', narrator: 'أبو هريرة', text: 'كل أمتي يدخلون الجنة إلا من أبى', category: 'الجنة' },
+  { id: 10, source: 'البخاري', narrator: 'أبو هريرة', text: 'من سلك طريقاً يلتمس فيه علماً سهّل الله له به طريقاً إلى الجنة', category: 'طلب العلم' },
+  { id: 11, source: 'البخاري', narrator: 'أبو هريرة', text: 'من غشّنا فليس منا', category: 'الأخلاق' },
+  { id: 12, source: 'البخاري', narrator: 'أبو هريرة', text: 'الدين النصيحة', category: 'النصح' },
+  { id: 13, source: 'البخاري', narrator: 'أنس بن مالك', text: 'لا أحد منكم يؤمن حتى أكون أحب إليه من والده وولده والناس أجمعين', category: 'محبة النبي' },
+  { id: 14, source: 'البخاري', narrator: 'أبو هريرة', text: 'إذا أحب الله عبداً نادى جبريل: إني أحب فلاناً فأحببه', category: 'محبة الله' },
+  { id: 15, source: 'البخاري', narrator: 'أبو هريرة', text: 'من قال لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير ...', category: 'الذكر' },
+  { id: 16, source: 'البخاري', narrator: 'أبو هريرة', text: 'أتدرون من المفلس؟', category: 'الفقر' },
+  { id: 17, source: 'البخاري', narrator: 'عائشة', text: 'من أحب لقاء الله أحب الله لقاءه', category: 'الموت' },
+  { id: 18, source: 'البخاري', narrator: 'أبو هريرة', text: 'إن الله لا ينظر إلى أجسادكم ولا إلى صوركم ولكن ينظر إلى قلوبكم', category: 'القلوب' },
+  { id: 19, source: 'البخاري', narrator: 'أبو هريرة', text: 'كل سلامي من أمتي عليها إثم فكل شيء يصيب المؤمن يكفر الله عنه', category: 'الابتلاء' },
+  { id: 20, source: 'البخاري', narrator: 'أبو هريرة', text: 'من قام رمضان إيماناً واحتساباً غفر له ما تقدم من ذنبه', category: 'رمضان' }
+];
+
+// Tafseer references — for users who want to deepen their Quran study.
+const TAFSEER_REFS = [
+  { id: 1, surah: 'الفاتحة', verses: '1-7', source: 'تفسير ابن كثير', topic: 'أم الكتاب' },
+  { id: 2, surah: 'البقرة', verses: '1-5', source: 'تفسير ابن كثير', topic: 'المؤمنون' },
+  { id: 3, surah: 'البقرة', verses: '183-186', source: 'تفسير السعدي', topic: 'الصيام' },
+  { id: 4, surah: 'البقرة', verses: '255', source: 'تفسير ابن كثير', topic: 'آية الكرسي' },
+  { id: 5, surah: 'آل عمران', verses: '1-9', source: 'تفسير ابن كثير', topic: 'التوحيد' },
+  { id: 6, surah: 'النور', verses: '35', source: 'تفسير ابن كثير', topic: 'آية النور' },
+  { id: 7, surah: 'يس', verses: '1-12', source: 'تفسير ابن كثير', topic: 'القرآن العظيم' },
+  { id: 8, surah: 'الملك', verses: '1-14', source: 'تفسير السعدي', topic: 'عظمة الله' },
+  { id: 9, surah: 'الواقعة', verses: '1-40', source: 'تفسير ابن كثير', topic: 'يوم القيامة' },
+  { id: 10, surah: 'الرحمن', verses: '1-30', source: 'تفسير السعدي', topic: 'نعم الله' }
+];

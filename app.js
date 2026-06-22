@@ -282,7 +282,7 @@ function loginRemainingMs(email) {
     return entry && entry.lockedUntil ? Math.max(0, entry.lockedUntil - Date.now()) : 0;
   } catch (e) { return 0; }
 }
-function getDefaultState() { return { level: 1, xp: 0, streak: 0, longestStreak: 0, gems: 0, totalDays: 0, lastDate: null, completionRewardedDate: null, lastCompletionReward: null, todayTasks: [], completedChallenges: [], achievements: [], darkMode: false, notifEnabled: false, soundEnabled: true, vibrationEnabled: true, referralCode: generateCode(), totalShared: 0, streakFreezes: 0, dailyHistory: [], goals: [], totalPrayers: 0, totalQuran: 0, totalDhikr: 0, lastSync: null, prayerTimesEnabled: true, prayerTimes: null, location: null, todayPrayers: {}, todayAdhkar: {}, tasbihCount: 0, tasbihTotal: 0, tasbihText: 'سبحان الله وبحمده', tasbihTarget: 33, dailyGoals: [], purchasedItems: [], equippedAvatar: null, equippedTheme: null, equippedBadge: null, doubleXPTimer: 0, shieldActive: false, lastLoginDate: null, loginStreak: 0, totalLogins: 0, dailyRewardClaimed: false, claimedDailyRewards: [], charityTotal: 0, familyId: null, familyRole: null, parentId: null, childId: null }; }
+function getDefaultState() { return { level: 1, xp: 0, streak: 0, longestStreak: 0, gems: 0, totalDays: 0, lastDate: null, completionRewardedDate: null, lastCompletionReward: null, dayFinalizedDate: null, todayTasks: [], todayTaskDetails: [], completedChallenges: [], achievements: [], darkMode: false, notifEnabled: false, soundEnabled: true, vibrationEnabled: true, referralCode: generateCode(), totalShared: 0, streakFreezes: 0, dailyHistory: [], goals: [], totalPrayers: 0, totalQuran: 0, totalDhikr: 0, lastSync: null, prayerTimesEnabled: true, prayerTimes: null, location: null, todayPrayers: {}, todayAdhkar: {}, tasbihCount: 0, tasbihTotal: 0, tasbihText: 'سبحان الله وبحمده', tasbihTarget: 33, dailyGoals: [], purchasedItems: [], equippedAvatar: null, equippedTheme: null, equippedBadge: null, doubleXPTimer: 0, shieldActive: false, lastLoginDate: null, loginStreak: 0, totalLogins: 0, dailyRewardClaimed: false, claimedDailyRewards: [], charityTotal: 0, familyId: null, familyRole: null, parentId: null, childId: null }; }
 
 // Roll over per-day state if the calendar day has changed.
 // Returns true if a roll-over actually happened.
@@ -291,6 +291,7 @@ function rolloverIfNewDay() {
   if (state.lastDate !== today) {
     // New day: reset today's tasks/prayers/adhkar but keep yesterday's history entries.
     state.todayTasks = [];
+    state.todayTaskDetails = [];
     state.todayPrayers = {};
     state.todayAdhkar = {};
     state.lastDate = today;
@@ -348,6 +349,7 @@ function loadState() {
   if (!state.todayPrayers) state.todayPrayers = {};
   if (!state.todayAdhkar) state.todayAdhkar = {};
   if (!state.purchasedItems) state.purchasedItems = [];
+  if (!state.todayTaskDetails) state.todayTaskDetails = [];
   if (!('completionRewardedDate' in state)) state.completionRewardedDate = null;
   if (!('lastCompletionReward' in state)) state.lastCompletionReward = null;
   if (!('dayFinalizedDate' in state)) state.dayFinalizedDate = null;
@@ -585,6 +587,9 @@ function renderTracker() {
   html += '<div class="card"><div style="display: flex; justify-content: space-between; margin-bottom: 12px;"><span style="font-weight: 800;">التقدم اليومي</span><span style="color: var(--primary); font-weight: 900;" id="progressPercent">0%</span></div><div class="progress-container"><div class="progress-bar" id="progressBar" style="width: 0%"></div></div><div style="display: flex; justify-content: space-between; margin-top: 12px;"><span style="font-size: 13px; color: var(--text-muted);">🔥 السلسلة: <span id="streakCount">' + state.streak + '</span></span><span style="font-size: 13px; color: var(--text-muted);" id="todayDate">' + today + '</span></div></div>';
   html += '<div class="card" style="display: none;" id="rewardBanner"></div>';
 
+  // Ensure taskDetails exists
+  if (!Array.isArray(state.todayTaskDetails)) state.todayTaskDetails = [];
+
   let taskId = 0;
   level.sections.forEach(section => {
     html += '<div class="task-section"><div class="task-section-title">' + section.title + '</div>';
@@ -592,12 +597,36 @@ function renderTracker() {
       const taskText = typeof task === 'string' ? task : task.text;
       const taskXP = typeof task === 'string' ? 10 : (task.xp || 10);
       const done = state.todayTasks.includes(taskId);
-      html += '<div class="task-item ' + (done ? 'completed' : '') + '" onclick="toggleTask(' + taskId + ')"><div class="task-checkbox">' + (done ? '✓' : '') + '</div><div class="task-text">' + taskText + '</div><div style="font-size:11px;color:var(--primary);font-weight:700;">+' + taskXP + ' XP</div></div>';
+      const savedDetails = state.todayTaskDetails[taskId] || '';
+      // Build the task card with a details input + checkbox
+      html += '<div class="task-item ' + (done ? 'completed' : '') + '" data-task-id="' + taskId + '">';
+      html += '<div style="display: flex; align-items: center; gap: 12px;">';
+      html += '<div class="task-checkbox" data-action="toggleTask" data-args="[' + taskId + ']" style="cursor: pointer; min-width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 900; color: var(--primary); background: ' + (done ? 'var(--primary)' : 'transparent') + ';">' + (done ? '✓' : '') + '</div>';
+      html += '<div style="flex: 1;"><div class="task-text" style="font-weight: 600; color: ' + (done ? 'var(--primary)' : 'var(--text)') + ';">' + escapeHtml(taskText) + '</div>';
+      // Details input — what the user actually did
+      html += '<input type="text" class="task-detail-input" data-task-id="' + taskId + '" placeholder="ماذا فعلت؟ (صفحة / آية / عدد)" value="' + escapeAttr(savedDetails) + '" maxlength="100" style="margin-top: 6px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; width: 100%; background: var(--bg); color: var(--text); text-align: right;" />';
+      html += '</div>';
+      html += '<div style="font-size: 11px; color: var(--primary); font-weight: 700; white-space: nowrap;">+' + taskXP + ' XP</div>';
+      html += '</div>';
+      html += '</div>';
       taskId++;
     });
     html += '</div>';
   });
+  html += '<div id="trackerSummary" style="margin-top: 16px; padding: 12px; background: var(--bg); border-radius: 12px; font-size: 13px;"></div>';
   document.getElementById('tasksContainer').innerHTML = html;
+
+  // Wire up input listeners to save details as user types
+  document.querySelectorAll('.task-detail-input').forEach(function(input) {
+    var tid = parseInt(input.getAttribute('data-task-id'), 10);
+    if (isNaN(tid)) return;
+    input.addEventListener('input', function() {
+      if (!Array.isArray(state.todayTaskDetails)) state.todayTaskDetails = [];
+      state.todayTaskDetails[tid] = sanitizeInput(input.value, 100);
+      saveState();
+    });
+  });
+
   updateProgress();
 }
 
@@ -609,6 +638,32 @@ function toggleTask(taskId) {
   if (!Number.isInteger(taskId) || taskId < 0 || taskId >= total) return;
   const idx = state.todayTasks.indexOf(taskId);
   if (idx === -1) {
+    // Marking complete — ask the user to confirm what they did
+    const detailsInput = document.querySelector('.task-detail-input[data-task-id="' + taskId + '"]');
+    const details = detailsInput ? detailsInput.value.trim() : '';
+    if (!details) {
+      const taskObj = (function() {
+        let counter = 0;
+        for (const section of level.sections) {
+          for (const task of section.tasks) {
+            if (counter === taskId) return task;
+            counter++;
+          }
+        }
+        return null;
+      })();
+      const taskText = taskObj ? (typeof taskObj === 'string' ? taskObj : taskObj.text) : '';
+      const ask = prompt('ما الذي قمت به؟\nمثال: "صفحة 5-7" أو "آية الكرسي"\n\nالمهمة: ' + taskText, '');
+      if (ask === null) return; // cancelled
+      const sanitized = sanitizeInput(ask, 100);
+      if (!sanitized) {
+        showNotification('تفاصيل مطلوبة', 'يجب كتابة ما قمت به لتسجيل المهمة');
+        return;
+      }
+      if (detailsInput) detailsInput.value = sanitized;
+      if (!Array.isArray(state.todayTaskDetails)) state.todayTaskDetails = [];
+      state.todayTaskDetails[taskId] = sanitized;
+    }
     state.todayTasks.push(taskId);
     let taskIdCounter = 0;
     for (const section of level.sections) {
@@ -623,9 +678,13 @@ function toggleTask(taskId) {
       }
       if (taskIdCounter > taskId) break;
     }
-    playSound(); vibrate(50);
-  } else { state.todayTasks.splice(idx, 1); }
-  saveState(); renderTracker(); updateHeaderGems(); playSound();
+    vibrate(50);
+  } else {
+    state.todayTasks.splice(idx, 1);
+    // Keep the details so the user doesn't have to re-type on re-check
+  }
+  saveState();
+  renderTracker(); updateHeaderGems(); playSound();
 }
 
 function updateProgress() {
@@ -683,6 +742,38 @@ function updateProgress() {
     // Already completed today — show the persistent "all done" notice
     showCompletionCongrats(level, /*persistOnly=*/ true);
   }
+  // Update the concrete summary panel with what the user actually did
+  renderTrackerSummary(level);
+}
+
+// Render a concrete "what you did today" summary at the bottom of the tracker
+// so the user can see exactly which pages / verses / counts they recorded.
+function renderTrackerSummary(level) {
+  const el = document.getElementById('trackerSummary');
+  if (!el) return;
+  let html = '<div style="font-weight: 800; margin-bottom: 8px;">📋 ملخص اليوم</div>';
+  let hasContent = false;
+  let counter = 0;
+  level.sections.forEach(section => {
+    section.tasks.forEach(task => {
+      const tid = counter;
+      const isDone = state.todayTasks.includes(tid);
+      const details = state.todayTaskDetails && state.todayTaskDetails[tid];
+      if (isDone && details) {
+        const taskText = typeof task === 'string' ? task : task.text;
+        html += '<div style="padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px;">';
+        html += '<span style="color: var(--primary);">✓</span> <strong>' + escapeHtml(taskText) + '</strong>';
+        html += '<div style="color: var(--text-muted); margin-right: 20px; margin-top: 2px;">↳ ' + escapeHtml(details) + '</div>';
+        html += '</div>';
+        hasContent = true;
+      }
+      counter++;
+    });
+  });
+  if (!hasContent) {
+    html += '<div style="color: var(--text-muted); font-size: 13px;">لم تسجل أي مهمة بعد. اضغط على المهمة وأخبرنا ماذا فعلت.</div>';
+  }
+  el.innerHTML = html;
 }
 
 // Show the completion celebration the FIRST time today,
@@ -1252,22 +1343,111 @@ function completeDhikr(key, reward, totalCount) {
 }
 
 // ==================== QURAN ====================
-function renderQuran() { let html = '<div class="card" style="background: linear-gradient(135deg, #10B981, #059669); color: white; margin-bottom: 16px; text-align: center;"><div style="font-size: 20px; font-weight: 900;">📖 القرآن الكريم</div></div>'; QURAN_PARTS.forEach(part => { html += '<div class="card" style="margin-bottom: 12px;"><div style="font-weight: 800;">الجزء ' + part.id + ': ' + part.name + '</div><div style="font-size: 13px; color: var(--text-muted);">صفحات: ' + part.pages + ' | ' + part.surahs + '</div><button class="btn btn-primary" style="margin-top: 8px;" onclick="logQuran(' + part.id + ')">✓ قرأت</button></div>'; }); document.getElementById('quranPartsContainer').innerHTML = html; }
+function renderQuran() {
+  rolloverIfNewDay();
+  const today = getToday();
+  const sessionKey = 'quranSession_' + today;
+  let session;
+  try { session = JSON.parse(localStorage.getItem(sessionKey) || '{}'); } catch (e) { session = {}; }
+  const loggedParts = Array.isArray(session.parts) ? session.parts : [];
+  const pagesRead = Array.isArray(session.pages) ? session.pages : [];
+
+  let html = '<div class="card" style="background: linear-gradient(135deg, #10B981, #059669); color: white; margin-bottom: 16px; text-align: center;">';
+  html += '<div style="font-size: 20px; font-weight: 900;">📖 القرآن الكريم</div>';
+  html += '<div style="font-size: 13px; opacity: 0.9; margin-top: 4px;">سجل قراءتك اليوم</div>';
+  html += '</div>';
+
+  // Today's concrete log
+  if (loggedParts.length > 0 || pagesRead.length > 0) {
+    html += '<div class="card" style="background: linear-gradient(135deg, #ECFDF5, #D1FAE5); border-color: #10B981; margin-bottom: 12px;">';
+    html += '<div style="font-weight: 800; margin-bottom: 8px;">✅ قراءتك اليوم</div>';
+    if (pagesRead.length > 0) {
+      html += '<div style="margin-bottom: 8px;"><strong>الصفحات:</strong> ' + escapeHtml(pagesRead.join('، ')) + '</div>';
+    }
+    if (loggedParts.length > 0) {
+      html += '<div><strong>الأجزاء:</strong> ' + loggedParts.map(function(id) {
+        const p = (typeof QURAN_PARTS !== 'undefined') && QURAN_PARTS.find(function(x) { return x.id === id; });
+        return p ? escapeHtml(p.name) : ('الجزء ' + id);
+      }).join('، ') + '</div>';
+    }
+    html += '</div>';
+  }
+
+  // Quick add: page number input
+  html += '<div class="card" style="margin-bottom: 12px;">';
+  html += '<div style="font-weight: 800; margin-bottom: 8px;">➕ أضف صفحات قرأتها</div>';
+  html += '<div style="display: flex; gap: 8px; align-items: center;">';
+  html += '<input type="number" id="quranPageInput" min="1" max="604" placeholder="رقم الصفحة (1-604)" style="flex: 1; padding: 10px; border: 2px solid var(--border); border-radius: 10px; text-align: center; font-size: 16px;" />';
+  html += '<button class="btn btn-primary" data-action="addQuranPage" data-args=[] style="width: auto; padding: 10px 16px;">+ أضف</button>';
+  html += '</div>';
+  html += '<div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">أو اختر من الأجزاء أدناه</div>';
+  html += '</div>';
+
+  // 30 parts grid
+  html += '<div style="font-weight: 800; margin-bottom: 8px;">📚 الأجزاء (30)</div>';
+  QURAN_PARTS.forEach(part => {
+    const done = loggedParts.includes(part.id);
+    html += '<div class="card" style="margin-bottom: 8px; padding: 12px; border-color: ' + (done ? 'var(--success)' : 'var(--border)') + ';">';
+    html += '<div style="display: flex; align-items: center; gap: 12px;">';
+    html += '<div style="width: 36px; height: 36px; border-radius: 8px; background: ' + (done ? 'var(--success)' : 'var(--primary)') + '; color: white; display: flex; align-items: center; justify-content: center; font-weight: 900;">' + (done ? '✓' : part.id) + '</div>';
+    html += '<div style="flex: 1;"><div style="font-weight: 700; font-size: 14px;">الجزء ' + part.id + ': ' + escapeHtml(part.name) + '</div>';
+    html += '<div style="font-size: 11px; color: var(--text-muted);">صفحات ' + escapeHtml(part.pages) + ' · ' + escapeHtml(part.surahs) + '</div></div>';
+    html += '<button class="btn ' + (done ? 'btn-success' : 'btn-primary') + '" data-action="logQuran" data-args="[' + part.id + ']" style="width: auto; padding: 8px 14px; font-size: 12px;">' + (done ? '✓ قرأت' : 'سجل') + '</button>';
+    html += '</div></div>';
+  });
+  document.getElementById('quranPartsContainer').innerHTML = html;
+}
+
 function logQuran(partId) {
   rolloverIfNewDay();
-  // Validate partId against the static Quran parts (defends against injected IDs)
   const validPart = typeof QURAN_PARTS !== 'undefined' && QURAN_PARTS.find(p => p.id === partId);
   if (!validPart) return;
   const today = getToday();
-  const partsKey = 'quranParts_' + today;
-  let loggedParts;
-  try { loggedParts = JSON.parse(localStorage.getItem(partsKey) || '[]'); } catch (e) { loggedParts = []; }
-  if (loggedParts.includes(partId)) { showNotification('تنبيه', 'سجلت هذا الجزء اليوم'); return; }
-  loggedParts.push(partId);
-  localStorage.setItem(partsKey, JSON.stringify(loggedParts));
+  const sessionKey = 'quranSession_' + today;
+  let session;
+  try { session = JSON.parse(localStorage.getItem(sessionKey) || '{}'); } catch (e) { session = {}; }
+  const parts = Array.isArray(session.parts) ? session.parts : [];
+  if (parts.includes(partId)) { showNotification('تنبيه', 'سجلت هذا الجزء اليوم'); return; }
+  parts.push(partId);
+  session.parts = parts;
+  const pages = Array.isArray(session.pages) ? session.pages : [];
+  const pageFrom = parseInt(validPart.pages.split('-')[0], 10);
+  const pageTo = parseInt(validPart.pages.split('-')[1], 10);
+  if (!isNaN(pageFrom) && !isNaN(pageTo)) {
+    session.pages = pages.concat([pageFrom + '-' + pageTo]);
+  }
+  localStorage.setItem(sessionKey, JSON.stringify(session));
   state.totalQuran += 20; state.gems += 10; state.xp = (state.xp || 0) + 15;
   vibrate(50); saveState(); updateHeaderGems();
-  showNotification('🎉', '+10 جواهر | +15 XP');
+  showNotification('🎉', 'الجزء ' + partId + ': +10 جواهر | +15 XP');
+  renderQuran();
+}
+
+function addQuranPage() {
+  rolloverIfNewDay();
+  const input = document.getElementById('quranPageInput');
+  if (!input) return;
+  const page = parseInt(input.value, 10);
+  if (!Number.isInteger(page) || page < 1 || page > 604) {
+    showNotification('خطأ', 'أدخل رقم صفحة من 1 إلى 604');
+    return;
+  }
+  const today = getToday();
+  const sessionKey = 'quranSession_' + today;
+  let session;
+  try { session = JSON.parse(localStorage.getItem(sessionKey) || '{}'); } catch (e) { session = {}; }
+  const pages = Array.isArray(session.pages) ? session.pages : [];
+  for (let i = page; i <= Math.min(page + 2, 604); i++) {
+    if (!pages.includes(String(i))) pages.push(String(i));
+  }
+  session.pages = pages;
+  localStorage.setItem(sessionKey, JSON.stringify(session));
+  state.xp = (state.xp || 0) + 5;
+  state.gems += 3;
+  vibrate(50); saveState(); updateHeaderGems();
+  showNotification('🎉', 'تم تسجيل قراءة صفحة ' + page);
+  input.value = '';
+  renderQuran();
 }
 
 // ==================== PROFILE ====================

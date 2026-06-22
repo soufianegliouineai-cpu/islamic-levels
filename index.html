@@ -29,20 +29,28 @@
   <link rel="stylesheet" href="premium-styles.css">
   <link rel="stylesheet" href="splash.css">
   <script>
-    // Force a fresh service worker registration to evict any buggy cached
-    // app.js. The new SW (v7+) is cache-first for static assets so the next
-    // page load will get the latest code and run reconcileStreakWithHistory().
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistration().then(function(reg) {
-        if (reg && reg.active && !navigator.serviceWorker.controller) {
-          // SW is active but not controlling this page — reload once to take over.
-          if (!sessionStorage.getItem('il-sw-reload')) {
-            sessionStorage.setItem('il-sw-reload', '1');
-            location.reload();
-          }
+    // AGGRESSIVE service worker cleanup. Unregister any existing SW so the
+    // browser fetches the latest sw.js with the new per-day guards. Then
+    // reload once so the new SW takes over. This bypasses the buggy cached
+    // app.js that may still be served from cache.
+    (function() {
+      if (!('serviceWorker' in navigator)) return;
+      if (sessionStorage.getItem('il-sw-clean')) return;
+      sessionStorage.setItem('il-sw-clean', '1');
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        var promises = regs.map(function(r) { return r.unregister(); });
+        return Promise.all(promises);
+      }).then(function() {
+        // Clear all caches so no stale assets are served
+        if ('caches' in window) {
+          caches.keys().then(function(keys) {
+            keys.forEach(function(k) { caches.delete(k); });
+          });
         }
+        // Reload once to fetch fresh code
+        setTimeout(function() { location.reload(); }, 100);
       });
-    }
+    })();
   </script>
 <script>
 // Delegated click handler — converts data-action elements into event dispatches.
