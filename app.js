@@ -546,14 +546,25 @@ function selectLevel(levelId) {
 // ==================== DASHBOARD ====================
 function renderDashboard() {
   const level = LEVELS.find(l => l.id === state.level);
-  const totalTasks = level ? level.sections.reduce((sum, s) => sum + s.tasks.length, 0) : 0;
-  const completedTasks = state.todayTasks.length;
-  const pct = totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  // Use the new challenge model
+  const challenges = getDailyChallenges(level);
+  const totalCh = challenges.length;
+  let doneCh = 0;
+  challenges.forEach(function(ch) {
+    const entry = state.todayChallenges[ch.id];
+    if (entry && (entry.progress || 0) >= ch.target) doneCh++;
+  });
+  const pct = totalCh ? Math.round((doneCh / totalCh) * 100) : 0;
   document.getElementById('statLevel').textContent = state.level;
   document.getElementById('statGems').textContent = state.gems;
   document.getElementById('statStreak').textContent = state.streak;
   document.getElementById('statDays').textContent = state.totalDays;
   document.getElementById('dashProgress').style.width = pct + '%';
+
+  // Render the new rich dashboard content into dashExtra
+  const dashExtra = document.getElementById('dashExtra');
+  if (dashExtra) dashExtra.innerHTML = buildDashboardContent(level, pct, doneCh, totalCh);
+
   const preview = document.getElementById('leaderboardPreview');
   if (!preview) return;
   const leaders = [
@@ -564,6 +575,160 @@ function renderDashboard() {
     { name: 'عمر', xp: Math.max(state.xp - 250, 200) }
   ].sort((a, b) => b.xp - a.xp);
   preview.innerHTML = '<div style="display: flex; flex-direction: column; gap: 8px;">' + leaders.map((u, i) => '<div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: ' + (u.me ? 'var(--primary-light)' : 'var(--bg)') + '; border-radius: 10px; border: ' + (u.me ? '1px solid var(--primary)' : '1px solid transparent') + ';">' + '<div style="display: flex; align-items: center; gap: 8px;"><span style="font-weight: 800; color: var(--text-muted); width: 24px;">#' + (i + 1) + '</span><span style="font-weight: 700;">' + (u.me ? '👤 ' : '🥇 ') + escapeHtml(u.name) + '</span></div>' + '<span style="font-weight: 800; color: var(--primary);">' + u.xp + ' XP</span></div>').join('') + '</div>';
+}
+
+// Build rich dashboard content: weekly chart, streak heatmap, level progress, today's challenges
+function buildDashboardContent(level, pct, doneCh, totalCh) {
+  let html = '';
+
+  // Weekly bar chart — last 7 days completion percentage
+  html += '<div class="card" style="margin-bottom: 12px;">';
+  html += '<div style="font-weight: 800; margin-bottom: 12px;">📊 آخر 7 أيام</div>';
+  const days = ['أحد', 'إثن', 'ثلاث', 'أربع', 'خميس', 'جمع', 'سبت'];
+  const today = new Date();
+  const todayStr = getToday();
+  const history = Array.isArray(state.dailyHistory) ? state.dailyHistory : [];
+  html += '<div style="display: flex; align-items: flex-end; justify-content: space-around; height: 140px; padding: 8px 0;">';
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const dayName = days[d.getDay()];
+    const isToday = dateStr === todayStr;
+    const entry = history.find(h => h.date === dateStr);
+    const completed = entry && entry.completed;
+    const dayPct = completed ? 100 : 0;
+    const height = Math.max(8, (dayPct / 100) * 100);
+    html += '<div style="text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;">';
+    html += '<div style="font-size: 10px; font-weight: 700; color: ' + (completed ? 'var(--success)' : 'var(--text-muted)') + ';">' + (completed ? '✓' : '—') + '</div>';
+    html += '<div style="width: 80%; max-width: 36px; height: ' + height + 'px; background: ' + (completed ? 'linear-gradient(180deg, var(--success), #34D399)' : 'var(--border)') + '; border-radius: 6px; border: ' + (isToday ? '2px solid var(--primary)' : 'none') + ';"></div>';
+    html += '<div style="font-size: 11px; font-weight: ' + (isToday ? '800' : '500') + '; color: ' + (isToday ? 'var(--primary)' : 'var(--text-muted)') + ';">' + dayName + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+  html += '</div>';
+
+  // Streak heatmap — last 30 days
+  html += '<div class="card" style="margin-bottom: 12px;">';
+  html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">';
+  html += '<div style="font-weight: 800;">🔥 خريطة الـ 30 يوم</div>';
+  html += '<div style="font-size: 12px; color: var(--text-muted);">🔥 ' + state.streak + ' يوم متتالي</div>';
+  html += '</div>';
+  html += '<div style="display: grid; grid-template-columns: repeat(15, 1fr); gap: 4px; max-width: 100%;">';
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const entry = history.find(h => h.date === dateStr);
+    const completed = entry && entry.completed;
+    const isToday = dateStr === todayStr;
+    html += '<div style="aspect-ratio: 1; border-radius: 4px; background: ' + (completed ? 'var(--success)' : 'var(--bg)') + '; border: ' + (isToday ? '2px solid var(--primary)' : '1px solid var(--border)') + ';" title="' + dateStr + '"></div>';
+  }
+  html += '</div>';
+  html += '<div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-top: 8px;">';
+  html += '<span>قبل 30 يوم</span><span>اليوم</span>';
+  html += '</div>';
+  html += '</div>';
+
+  // XP progress toward next level
+  const xp = state.xp || 0;
+  const xpPerLevel = 1000;
+  const xpInLevel = xp % xpPerLevel;
+  const xpToNext = xpPerLevel - xpInLevel;
+  const xpLevelPct = Math.round((xpInLevel / xpPerLevel) * 100);
+  html += '<div class="card" style="margin-bottom: 12px;">';
+  html += '<div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span style="font-weight: 800;">⭐ تقدم المستوى</span><span style="font-weight: 700; color: var(--primary);">' + xpInLevel + ' / ' + xpPerLevel + ' XP</span></div>';
+  html += '<div class="progress-container" style="height: 12px;"><div class="progress-bar" style="width: ' + xpLevelPct + '%;"></div></div>';
+  html += '<div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">تبقى ' + xpToNext + ' XP للوصول للمستوى التالي</div>';
+  html += '</div>';
+
+  // Today's challenges breakdown
+  html += '<div class="card" style="margin-bottom: 12px;">';
+  html += '<div style="display: flex; justify-content: space-between; margin-bottom: 12px;">';
+  html += '<div style="font-weight: 800;">🎯 تحديات اليوم</div>';
+  html += '<div style="font-weight: 700; color: var(--primary);">' + doneCh + ' / ' + totalCh + '</div>';
+  html += '</div>';
+  if (totalCh === 0) {
+    html += '<div style="color: var(--text-muted); font-size: 13px;">لا توجد تحديات لليوم</div>';
+  } else {
+    const challenges = getDailyChallenges(level);
+    challenges.forEach(function(ch) {
+      const entry = state.todayChallenges[ch.id] || { progress: 0, notes: '' };
+      const progress = Math.min(entry.progress || 0, ch.target);
+      const done = progress >= ch.target;
+      const itemPct = Math.round((progress / ch.target) * 100);
+      html += '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">';
+      html += '<div style="width: 28px; text-align: center; font-size: 16px;">' + ch.icon + '</div>';
+      html += '<div style="flex: 1;"><div style="font-size: 12px; font-weight: 600; margin-bottom: 2px;">' + escapeHtml(ch.title) + '</div>';
+      html += '<div class="progress-container" style="height: 6px;"><div class="progress-bar" style="width: ' + itemPct + '%; background: ' + (done ? 'var(--success)' : 'var(--primary)') + ';"></div></div></div>';
+      html += '<div style="font-size: 11px; font-weight: 700; color: ' + (done ? 'var(--success)' : 'var(--text-muted)') + '; min-width: 50px; text-align: left;">' + progress + '/' + ch.target + '</div>';
+      html += '</div>';
+    });
+  }
+  html += '</div>';
+
+  // Personal insights
+  html += '<div class="card" style="margin-bottom: 12px;">';
+  html += '<div style="font-weight: 800; margin-bottom: 8px;">💡 رؤى شخصية</div>';
+  const insights = generateInsights();
+  insights.forEach(function(insight) {
+    html += '<div style="padding: 8px; margin-bottom: 6px; background: ' + insight.bg + '; border-radius: 8px; font-size: 13px;">' + insight.icon + ' ' + escapeHtml(insight.text) + '</div>';
+  });
+  html += '</div>';
+
+  return html;
+}
+
+// Generate personalized insights based on the user's state
+function generateInsights() {
+  const insights = [];
+  const today = getToday();
+  const history = Array.isArray(state.dailyHistory) ? state.dailyHistory : [];
+  const last7Days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    last7Days.push({ date: dateStr, completed: history.find(h => h.date === dateStr) && history.find(h => h.date === dateStr).completed });
+  }
+  const completedThisWeek = last7Days.filter(d => d.completed).length;
+
+  // Streak insight
+  if (state.streak === 0) {
+    insights.push({ icon: '🌱', bg: '#FEF3C7', text: 'لم تكمل يوماً بعد. ابدأ اليوم بتحديات سهلة!' });
+  } else if (state.streak < 3) {
+    insights.push({ icon: '🔥', bg: '#FEE2E2', text: 'سلسلتك ' + state.streak + ' أيام. حافظ عليها لتصل لـ 7 أيام!' });
+  } else if (state.streak >= 7 && state.streak < 30) {
+    insights.push({ icon: '🌟', bg: '#DBEAFE', text: 'سلسلة ممتازة (' + state.streak + ' يوم)! أنت في طريقك لـ 30 يوماً.' });
+  } else if (state.streak >= 30) {
+    insights.push({ icon: '👑', bg: 'linear-gradient(135deg, #FEF3C7, #FDE68A)', text: 'سلسلة استثنائية ' + state.streak + ' يوم! أنت من الملتزمين.' });
+  }
+
+  // Week completion
+  if (completedThisWeek >= 5) {
+    insights.push({ icon: '📈', bg: '#D1FAE5', text: 'أكملت ' + completedThisWeek + ' من آخر 7 أيام. أداء رائع!' });
+  } else if (completedThisWeek >= 3) {
+    insights.push({ icon: '⚖️', bg: '#FEF3C7', text: 'أكملت ' + completedThisWeek + ' من آخر 7 أيام. حاول الوصول لـ 5.' });
+  } else if (completedThisWeek < 3 && completedThisWeek > 0) {
+    insights.push({ icon: '⚠️', bg: '#FEE2E2', text: 'فقط ' + completedThisWeek + ' من آخر 7 أيام. لا تتوقف!' });
+  } else {
+    insights.push({ icon: '🎯', bg: '#FEE2E2', text: 'لم تكمل أي يوم هذا الأسبوع. ابدأ بتحدٍ واحد اليوم!' });
+  }
+
+  // Level-specific insight
+  const level = LEVELS.find(l => l.id === state.level);
+  if (level && state.totalDays < LEVEL_REQUIREMENTS[state.level] - 5) {
+    insights.push({ icon: '🔓', bg: '#EDE9FE', text: 'تحتاج ' + (LEVEL_REQUIREMENTS[state.level] - state.totalDays) + ' يوم لفتح المستوى التالي.' });
+  }
+
+  // Gems insight
+  if (state.gems < 50) {
+    insights.push({ icon: '💎', bg: '#DBEAFE', text: 'لديك ' + state.gems + ' جوهرة. أكمل تحديات لكسب المزيد.' });
+  } else if (state.gems >= 500) {
+    insights.push({ icon: '💰', bg: '#D1FAE5', text: 'لديك ' + state.gems + ' جوهرة! يمكنك شراء عناصر من المتجر.' });
+  }
+
+  return insights.slice(0, 4);
 }
 
 // ==================== TRACKER ====================
@@ -1016,7 +1181,30 @@ function hideCompletionCongrats() {
 }
 
 function showConfetti() { const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1']; for (let i = 0; i < 30; i++) { const c = document.createElement('div'); c.className = 'confetti'; c.style.left = Math.random() * 100 + '%'; c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)]; c.style.animationDelay = Math.random() * 2 + 's'; document.body.appendChild(c); setTimeout(() => c.remove(), 4000); } }
-function updateHeaderGems() { const g = document.getElementById('headerGems'); const x = document.getElementById('headerXP'); if (g) g.textContent = state.gems; if (x) x.textContent = state.xp || 0; }
+function updateHeaderGems() {
+  const g = document.getElementById('headerGems');
+  const x = document.getElementById('headerXP');
+  const s = document.getElementById('headerStreak');
+  const dp = document.getElementById('headerDailyProgress');
+  if (g) g.textContent = state.gems;
+  if (x) x.textContent = state.xp || 0;
+  if (s) s.textContent = '🔥 ' + (state.streak || 0);
+  if (dp) {
+    // Compute today's challenge completion %
+    const level = LEVELS.find(l => l.id === state.level);
+    if (level && typeof getDailyChallenges === 'function') {
+      const challenges = getDailyChallenges(level);
+      let done = 0;
+      challenges.forEach(function(ch) {
+        const entry = state.todayChallenges[ch.id];
+        if (entry && (entry.progress || 0) >= ch.target) done++;
+      });
+      const pct = challenges.length ? Math.round((done / challenges.length) * 100) : 0;
+      dp.style.width = pct + '%';
+      dp.parentElement && (dp.parentElement.setAttribute('aria-valuenow', pct));
+    }
+  }
+}
 
 // ==================== LEVEL LOCK SYSTEM ====================
 function checkLevelUnlock(state) {

@@ -132,6 +132,7 @@ document.addEventListener('click', function(e) { __ilDispatch(e.target); });
         <div style="display: flex; gap: 12px; align-items: center;">
           <span style="font-size: 14px; font-weight: 900; color: #F59E0B;">⭐ <span id="headerXP">0</span></span>
           <span style="font-size: 14px; font-weight: 900; color: #F59E0B;">💎 <span id="headerGems">0</span></span>
+          <span id="headerStreak" style="font-size: 14px; font-weight: 900; color: #F97316;">🔥 0</span>
           <button data-action="showScreen" data-args=["'profile'"] style="background: rgba(255,255,255,0.2); border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer;" id="profileBtn">👤</button>
         </div>
       </div>
@@ -301,6 +302,7 @@ document.addEventListener('click', function(e) { __ilDispatch(e.target); });
         </div>
         <div class="card"><div style="font-weight: 800; margin-bottom: 12px; text-align: right;">تقدم اليوم</div><div class="progress-container"><div class="progress-bar" id="dashProgress" style="width: 0%"></div></div></div>
         <div class="card"><div style="font-weight: 800; margin-bottom: 12px; text-align: right;">🏆 الترتيب العالمي</div><div id="leaderboardPreview"></div></div>
+        <div id="dashExtra"></div>
       </section>
 
       <!-- Adhkar -->
