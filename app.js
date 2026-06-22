@@ -527,7 +527,7 @@ function renderTracker() {
   rolloverIfNewDay();
   document.getElementById('todayDate').textContent = today;
   document.getElementById('streakCount').textContent = state.streak;
-  
+
   // Show level lock status
   const unlock = checkLevelUnlock(state);
   let html = '';
@@ -539,10 +539,10 @@ function renderTracker() {
     html += '<div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">' + state.totalDays + '/' + (unlock.daysRequired || 30) + ' يوم</div>';
     html += '</div>';
   }
-  
+
   html += '<div class="card"><div style="display: flex; justify-content: space-between; margin-bottom: 12px;"><span style="font-weight: 800;">التقدم اليومي</span><span style="color: var(--primary); font-weight: 900;" id="progressPercent">0%</span></div><div class="progress-container"><div class="progress-bar" id="progressBar" style="width: 0%"></div></div><div style="display: flex; justify-content: space-between; margin-top: 12px;"><span style="font-size: 13px; color: var(--text-muted);">🔥 السلسلة: <span id="streakCount">' + state.streak + '</span></span><span style="font-size: 13px; color: var(--text-muted);" id="todayDate">' + today + '</span></div></div>';
-  html += '<div class="card" style="background: #FEF3C7; border-color: #F59E0B; display: none;" id="rewardBanner"><div style="text-align: center; font-weight: 800; color: #92400E;">🎉 مبروك! حصلت على <span id="rewardGems">0</span> جواهر!</div></div>';
-  
+  html += '<div class="card" style="display: none;" id="rewardBanner"></div>';
+
   let taskId = 0;
   level.sections.forEach(section => {
     html += '<div class="task-section"><div class="task-section-title">' + section.title + '</div>';
@@ -612,9 +612,7 @@ function updateProgress() {
     state.dailyHistory = (state.dailyHistory || []).filter(h => h.date !== today);
     state.dailyHistory.push({ date: today, completed: true, gems: level.reward });
     if (state.dailyHistory.length > 30) state.dailyHistory = state.dailyHistory.slice(-30);
-    document.getElementById('rewardBanner').style.display = 'block';
-    document.getElementById('rewardGems').textContent = level.reward;
-    saveState(); checkAchievements(); showConfetti(); updateHeaderGems();
+    saveState(); checkAchievements(); showConfetti(); showCompletionCongrats(level); updateHeaderGems();
   } else if (pct < 100 && wasRewardedToday) {
     // Roll back rewards awarded earlier today (user unchecked a task)
     const reward = state.lastCompletionReward;
@@ -627,10 +625,54 @@ function updateProgress() {
       state.dailyHistory = (state.dailyHistory || []).filter(h => h.date !== today);
       state.lastCompletionReward = null;
       state.completionRewardedDate = null;
-      document.getElementById('rewardBanner').style.display = 'none';
+      hideCompletionCongrats();
       saveState(); updateHeaderGems();
     }
+  } else if (pct === 100 && wasRewardedToday) {
+    // Already completed today — show the persistent "all done" notice
+    showCompletionCongrats(level, /*persistOnly=*/ true);
   }
+}
+
+// Show the completion celebration the FIRST time today,
+// then a quieter "all done" notice on subsequent navigations.
+function showCompletionCongrats(level, persistOnly) {
+  const banner = document.getElementById('rewardBanner');
+  if (!banner) return;
+  if (persistOnly) {
+    banner.style.display = 'block';
+    banner.style.background = 'linear-gradient(135deg, #D1FAE5, #A7F3D0)';
+    banner.style.borderColor = '#10B981';
+    banner.innerHTML =
+      '<div style="text-align: center; padding: 8px;">' +
+      '<div style="font-size: 28px; margin-bottom: 6px;">✅</div>' +
+      '<div style="font-weight: 800; font-size: 18px; color: #065F46;">أحسنت! أكملت جميع المهام اليوم</div>' +
+      '<div style="font-size: 13px; color: var(--text-muted); margin-top: 6px;">🔥 السلسلة: ' + state.streak +
+      ' | 💎 +' + (level.reward || 0) + ' | ⭐ +' + (level.xp || 0) + ' XP</div>' +
+      '<div style="font-size: 13px; color: var(--text-muted); margin-top: 8px;">⏳ عد غداً للمزيد من المهام</div>' +
+      '</div>';
+    return;
+  }
+  banner.style.display = 'block';
+  banner.style.background = 'linear-gradient(135deg, #FEF3C7, #FDE68A)';
+  banner.style.borderColor = '#F59E0B';
+  banner.innerHTML =
+    '<div style="text-align: center; padding: 12px;">' +
+    '<div style="font-size: 36px; margin-bottom: 8px;">🎉</div>' +
+    '<div style="font-weight: 900; font-size: 20px; color: #92400E;">مبروك! أكملت جميع مهام اليوم</div>' +
+    '<div style="margin-top: 12px; display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">' +
+    '<div style="padding: 8px 12px; background: rgba(255,255,255,0.6); border-radius: 10px;"><div style="font-size: 11px; color: var(--text-muted);">🔥 السلسلة</div><div style="font-weight: 900; color: #92400E;">' + state.streak + '</div></div>' +
+    '<div style="padding: 8px 12px; background: rgba(255,255,255,0.6); border-radius: 10px;"><div style="font-size: 11px; color: var(--text-muted);">💎 مكافأة</div><div style="font-weight: 900; color: #92400E;">+' + (level.reward || 0) + '</div></div>' +
+    '<div style="padding: 8px 12px; background: rgba(255,255,255,0.6); border-radius: 10px;"><div style="font-size: 11px; color: var(--text-muted);">⭐ خبرة</div><div style="font-weight: 900; color: #92400E;">+' + (level.xp || 0) + '</div></div>' +
+    '</div>' +
+    '<div style="font-size: 13px; color: var(--text-muted); margin-top: 12px;">⏳ عد غداً لمهام جديدة</div>' +
+    '</div>';
+  showNotification('🎉', 'أحسنت! أكملت جميع مهام اليوم — +' + (level.reward || 0) + ' جوهرة');
+}
+
+function hideCompletionCongrats() {
+  const banner = document.getElementById('rewardBanner');
+  if (banner) banner.style.display = 'none';
 }
 
 function showConfetti() { const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1']; for (let i = 0; i < 30; i++) { const c = document.createElement('div'); c.className = 'confetti'; c.style.left = Math.random() * 100 + '%'; c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)]; c.style.animationDelay = Math.random() * 2 + 's'; document.body.appendChild(c); setTimeout(() => c.remove(), 4000); } }
