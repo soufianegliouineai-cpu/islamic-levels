@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   email TEXT UNIQUE,
   password_hash TEXT,
+  password_salt TEXT,
   name TEXT NOT NULL,
   role TEXT DEFAULT 'user' CHECK (role IN ('user', 'parent', 'admin')),
   avatar TEXT,

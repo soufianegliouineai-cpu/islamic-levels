@@ -36,34 +36,39 @@ class PrayerTimesService {
       const month = today.getMonth() + 1;
       const year = today.getFullYear();
 
-      const url = `https://api.aladhan.com/v1/timings/${day}-${month}-${year}?latitude=${latitude}&longitude=${longitude}&method=2`;
-      
-      const response = await fetch(url);
+      const baseUrl = `https://api.aladhan.com/v1/timings/${day}-${month}-${year}`;
+      const params = new URLSearchParams({ latitude: String(latitude), longitude: String(longitude), method: '2' });
+      const response = await fetch(`${baseUrl}?${params.toString()}`);
+      if (!response.ok) throw new Error('Prayer API HTTP ' + response.status);
+
       const data = await response.json();
-      
-      if (data.code === 200) {
-        this.times = {
-          fajr: data.data.timings.Fajr,
-          sunrise: data.data.timings.Sunrise,
-          dhuhr: data.data.timings.Dhuhr,
-          asr: data.data.timings.Asr,
-          maghrib: data.data.timings.Maghrib,
-          isha: data.data.timings.Isha,
-          imsak: data.data.timings.Imsak,
-          midnight: data.data.timings.Midnight
-        };
-        
-        // Hijri date
-        this.hijriDate = {
-          day: data.data.date.hijri.day,
-          month: data.data.date.hijri.month.number,
-          monthName: data.data.date.hijri.month.ar,
-          year: data.data.date.hijri.year,
-          formatted: data.data.date.hijri_formatted
-        };
-        
-        return { times: this.times, hijri: this.hijriDate };
+      const timings = data?.data?.timings;
+      const hijri = data?.data?.date?.hijri;
+      if (data?.code !== 200 || !timings?.Fajr || !hijri?.month?.number) {
+        throw new Error('Unexpected prayer API response shape');
       }
+
+      this.times = {
+        fajr: timings.Fajr,
+        sunrise: timings.Sunrise,
+        dhuhr: timings.Dhuhr,
+        asr: timings.Asr,
+        maghrib: timings.Maghrib,
+        isha: timings.Isha,
+        imsak: timings.Imsak,
+        midnight: timings.Midnight
+      };
+
+      // Hijri date
+      this.hijriDate = {
+        day: hijri.day,
+        month: hijri.month.number,
+        monthName: hijri.month.ar,
+        year: hijri.year,
+        formatted: data.data.date.hijri_formatted || `${hijri.day} ${hijri.month.ar} ${hijri.year} هـ`
+      };
+
+      return { times: this.times, hijri: this.hijriDate };
     } catch (error) {
       console.error('Error fetching prayer times:', error);
       return null;

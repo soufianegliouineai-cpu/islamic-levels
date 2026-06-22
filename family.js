@@ -1,5 +1,15 @@
 // ==================== FAMILY & REAL-TIME SYSTEM ====================
 
+function __fmEscapeHtml(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+function __fmSanitizeName(name) {
+  const s = String(name || '').trim();
+  return s.length > 50 ? s.slice(0, 50).trim() : s;
+}
+
 class FamilyManager {
   constructor() {
     this.familyId = null;
@@ -32,9 +42,10 @@ class FamilyManager {
   createFamily(parentName) {
     this.familyId = 'fam-' + Date.now();
     this.parentCode = this.generateCode(6);
+    const cleanName = __fmSanitizeName(parentName) || 'والد';
     const parent = {
       id: 'parent-' + Date.now(),
-      name: parentName,
+      name: cleanName,
       role: 'parent',
       gems: 0,
       xp: 0,
@@ -50,9 +61,10 @@ class FamilyManager {
 
   joinFamily(childName, code) {
     if (code.length !== 6) return { error: 'كود العائلة يجب أن يكون 6 أحرف' };
+    const cleanName = __fmSanitizeName(childName) || 'طفل';
     const child = {
       id: 'child-' + Date.now(),
-      name: childName,
+      name: cleanName,
       role: 'child',
       gems: 0,
       xp: 0,
@@ -67,7 +79,7 @@ class FamilyManager {
     this.saveFamily();
     
     // Notify parent
-    this.addNotification('family', 'عضو جديد انضم', childName + ' انضم إلى العائلة');
+    this.addNotification('family', 'عضو جديد انضم', __fmEscapeHtml(cleanName) + ' انضم إلى العائلة');
     
     return { success: true, child };
   }
@@ -136,8 +148,12 @@ class FamilyManager {
     if (this.syncChannel) {
       this.syncChannel.postMessage(data);
     }
-    // Also store in localStorage for cross-tab sync
-    localStorage.setItem('family-sync-' + Date.now(), JSON.stringify(data));
+    // Also store in localStorage for cross-tab sync using a single rotating key
+    try {
+      localStorage.setItem('family-sync-latest', JSON.stringify({ ts: Date.now(), data }));
+    } catch (e) {
+      // localStorage may be full or disabled
+    }
   }
 
   handleSyncMessage(data) {
@@ -153,11 +169,11 @@ class FamilyManager {
         break;
       case 'message':
         this.messages.push(data.message);
-        this.addNotification('message', 'رسالة جديدة', data.message.content, data.message.from);
+        this.addNotification('message', 'رسالة جديدة', __fmEscapeHtml(data.message.content), data.message.from);
         break;
       case 'request':
         this.requests.push(data.request);
-        this.addNotification('request', 'طلب جديد', data.request.type + ' - ' + (data.request.amount || ''), data.request.childId);
+        this.addNotification('request', 'طلب جديد', __fmEscapeHtml(data.request.type + ' - ' + (data.request.amount || '')), data.request.childId);
         break;
     }
   }
@@ -181,7 +197,7 @@ class FamilyManager {
     this.broadcastSync({ type: 'message', message });
     
     // Add notification for recipient
-    this.addNotification('message', 'رسالة من ' + (fromMember?.name || 'Unknown'), content, fromId);
+    this.addNotification('message', 'رسالة من ' + __fmEscapeHtml(fromMember?.name || 'Unknown'), __fmEscapeHtml(content), fromId);
     
     return message;
   }
@@ -226,7 +242,7 @@ class FamilyManager {
     this.broadcastSync({ type: 'request', request });
     
     // Notify parent
-    this.addNotification('request', 'طلب من ' + (child?.name || 'Unknown'), type + (amount ? ': ' + amount + ' 💎' : ''), childId);
+    this.addNotification('request', 'طلب من ' + __fmEscapeHtml(child?.name || 'Unknown'), __fmEscapeHtml(type + (amount ? ': ' + amount + ' 💎' : '')), childId);
     
     return request;
   }

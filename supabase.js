@@ -61,11 +61,13 @@ class SupabaseService {
   // ==================== AUTH ====================
   async signUp(email, password, name) {
     try {
+      const salt = this.generateSalt();
       const userData = await this.request('users', {
         method: 'POST',
         body: {
           email,
-          password_hash: this.hashPassword(password),
+          password_hash: await this.hashPassword(password, salt),
+          password_salt: salt,
           name,
           referral_code: this.generateCode(),
           current_member_id: 'user-' + Date.now()
@@ -83,9 +85,26 @@ class SupabaseService {
   async signIn(email, password) {
     const users = await this.request('users?email=eq.' + email);
     if (users.length === 0) throw new Error('المستخدم غير موجود');
-    
+
     const user = users[0];
-    if (user.password_hash !== this.hashPassword(password)) {
+    let valid = false;
+    if (user.password_salt) {
+      valid = user.password_hash === await this.hashPassword(password, user.password_salt);
+    } else if (user.password_hash && user.password_hash.startsWith('h_')) {
+      // Legacy hash fallback - migrate on success
+      valid = user.password_hash === this.legacyHashPassword(password);
+      if (valid) {
+        const newSalt = this.generateSalt();
+        const newHash = await this.hashPassword(password, newSalt);
+        try {
+          await this.request('users?id=eq.' + user.id, {
+            method: 'PATCH',
+            body: { password_hash: newHash, password_salt: newSalt }
+          });
+        } catch (e) {}
+      }
+    }
+    if (!valid) {
       throw new Error('كلمة المرور غير صحيحة');
     }
     
@@ -350,8 +369,22 @@ class SupabaseService {
     return code;
   }
 
-  hashPassword(password) {
-    // Simple hash - in production use bcrypt
+  generateSalt() {
+    const arr = new Uint8Array(16);
+    crypto.getRandomValues(arr);
+    return btoa(String.fromCharCode(...arr));
+  }
+
+  async hashPassword(password, salt) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(salt + password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = new Uint8Array(hashBuffer);
+    return btoa(String.fromCharCode(...hashArray));
+  }
+
+  legacyHashPassword(password) {
+    // Old insecure hash kept only for one-time migration
     let hash = 0;
     for (let i = 0; i < password.length; i++) {
       const char = password.charCodeAt(i);

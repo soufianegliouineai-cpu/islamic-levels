@@ -3,6 +3,7 @@
   "short_name": "الإيمان",
   "description": "تتبع تقدمك الإيماني يوميًا - 5 مستويات إيمانية مع مهام يومية وجواهر وسلاسل",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#8B5CF6",
   "theme_color": "#8B5CF6",

@@ -50,14 +50,19 @@ self.addEventListener('fetch', (e) => {
 
 // Push notifications
 self.addEventListener('push', (e) => {
-  const data = e.data.json();
+  let data = { title: 'المستويات الإيمانية', body: 'لديك إشعار جديد' };
+  try {
+    if (e.data) data = e.data.json();
+  } catch (err) {
+    console.error('[SW] Invalid push payload', err);
+  }
   e.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
+    self.registration.showNotification(data.title || 'المستويات الإيمانية', {
+      body: data.body || 'لديك إشعار جديد',
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',
       vibrate: [100, 50, 100],
-      data: { url: '/' }
+      data: { url: data.url || '/' }
     })
   );
 });

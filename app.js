@@ -196,7 +196,37 @@ function escapeHtml(str) {
   if (str == null) return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
-function hashLocalPassword(password) {
+function escapeJsString(str) {
+  if (str == null) return '';
+  return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+}
+function escapeAttr(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function sanitizeInput(str, max = 100) {
+  const s = String(str == null ? '' : str).trim();
+  return s.length > max ? s.slice(0, max).trim() : s;
+}
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || ''));
+}
+function generateLocalSalt() {
+  const arr = new Uint8Array(16);
+  crypto.getRandomValues(arr);
+  let s = '';
+  for (let i = 0; i < arr.length; i++) s += String.fromCharCode(arr[i]);
+  return btoa(s);
+}
+async function secureHashLocalPassword(password, salt) {
+  const data = new TextEncoder().encode(String(salt) + String(password));
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  const arr = new Uint8Array(buf);
+  let s = '';
+  for (let i = 0; i < arr.length; i++) s += String.fromCharCode(arr[i]);
+  return btoa(s);
+}
+function legacyHashLocalPassword(password) {
   let hash = 0;
   for (let i = 0; i < password.length; i++) {
     const char = password.charCodeAt(i);
@@ -205,6 +235,52 @@ function hashLocalPassword(password) {
   }
   return 'h_' + Math.abs(hash).toString(36);
 }
+function showNotification(title, body) {
+  try {
+    if (typeof notificationService !== 'undefined' && notificationService.showNotification) {
+      notificationService.showNotification(String(title || ''), { body: String(body || '') });
+      return;
+    }
+  } catch (e) {}
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try { new Notification(String(title || ''), { body: String(body || '') }); return; } catch (e) {}
+  }
+  const region = document.getElementById('toastRegion');
+  if (!region) { try { alert(String(title || '') + (body ? '\n' + body : '')); } catch (e) {} return; }
+  const toast = document.createElement('div');
+  toast.setAttribute('role', 'status');
+  toast.style.cssText = 'background:#10B981;color:#fff;padding:12px 16px;border-radius:12px;margin-bottom:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-weight:700;font-size:14px;text-align:center;';
+  toast.textContent = String(title || '') + (body ? ' — ' + body : '');
+  region.appendChild(toast);
+  setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 4000);
+}
+const LOGIN_ATTEMPT_KEY = 'il_login_attempts';
+function recordLoginAttempt(email, success) {
+  let data;
+  try { data = JSON.parse(localStorage.getItem(LOGIN_ATTEMPT_KEY) || '{}'); } catch (e) { data = {}; }
+  const key = String(email || '').toLowerCase();
+  if (success) { delete data[key]; localStorage.setItem(LOGIN_ATTEMPT_KEY, JSON.stringify(data)); return; }
+  const now = Date.now();
+  const entry = data[key] || { count: 0, lockedUntil: 0 };
+  if (entry.lockedUntil > now) entry.lockedUntil = now + Math.min(60000 * Math.pow(2, entry.count - 3), 900000);
+  else { entry.count += 1; if (entry.count >= 4) entry.lockedUntil = now + 30000; }
+  data[key] = entry;
+  try { localStorage.setItem(LOGIN_ATTEMPT_KEY, JSON.stringify(data)); } catch (e) {}
+}
+function isLoginLocked(email) {
+  try {
+    const data = JSON.parse(localStorage.getItem(LOGIN_ATTEMPT_KEY) || '{}');
+    const entry = data[String(email || '').toLowerCase()];
+    return entry && entry.lockedUntil && entry.lockedUntil > Date.now();
+  } catch (e) { return false; }
+}
+function loginRemainingMs(email) {
+  try {
+    const data = JSON.parse(localStorage.getItem(LOGIN_ATTEMPT_KEY) || '{}');
+    const entry = data[String(email || '').toLowerCase()];
+    return entry && entry.lockedUntil ? Math.max(0, entry.lockedUntil - Date.now()) : 0;
+  } catch (e) { return 0; }
+}
 function getDefaultState() { return { level: 1, xp: 0, streak: 0, longestStreak: 0, gems: 0, totalDays: 0, lastDate: null, todayTasks: [], completedChallenges: [], achievements: [], darkMode: false, notifEnabled: false, soundEnabled: true, vibrationEnabled: true, referralCode: generateCode(), totalShared: 0, streakFreezes: 0, dailyHistory: [], goals: [], totalPrayers: 0, totalQuran: 0, totalDhikr: 0, lastSync: null, prayerTimesEnabled: true, prayerTimes: null, location: null, todayPrayers: {}, todayAdhkar: {}, tasbihCount: 0, tasbihTotal: 0, tasbihText: 'سبحان الله وبحمده', tasbihTarget: 33, dailyGoals: [], purchasedItems: [], equippedAvatar: null, equippedTheme: null, equippedBadge: null, doubleXPTimer: 0, shieldActive: false, lastLoginDate: null, loginStreak: 0, totalLogins: 0, dailyRewardClaimed: false, claimedDailyRewards: [], charityTotal: 0, familyId: null, familyRole: null, parentId: null, childId: null }; }
 function loadState() { const s = localStorage.getItem('islamicLevels'); if (s) state = { ...getDefaultState(), ...JSON.parse(s) }; if (!state.referralCode) state.referralCode = generateCode(); if (!state.dailyHistory) state.dailyHistory = []; if (!state.todayPrayers) state.todayPrayers = {}; if (!state.todayAdhkar) state.todayAdhkar = {}; if (!state.purchasedItems) state.purchasedItems = []; checkDailyLogin(); updateTheme(); }
 function saveState() { localStorage.setItem('islamicLevels', JSON.stringify(state)); }
@@ -212,8 +288,59 @@ function saveState() { localStorage.setItem('islamicLevels', JSON.stringify(stat
 // ==================== AUTH ====================
 function showLogin() { document.getElementById('loginForm').style.display = 'block'; document.getElementById('registerForm').style.display = 'none'; }
 function showRegister() { document.getElementById('loginForm').style.display = 'none'; document.getElementById('registerForm').style.display = 'block'; }
-function login() { const e = document.getElementById('authEmail').value; const p = document.getElementById('authPassword').value; if (!e || !p) { alert('أدخل البريد وكلمة المرور'); return; } const users = JSON.parse(localStorage.getItem('islamicUsers') || '[]'); const hashed = hashLocalPassword(p); const user = users.find(u => u.email === e && u.password === hashed); if (user) { authState = { isLoggedIn: true, user, isGuest: false }; localStorage.setItem('islamicAuth', JSON.stringify(authState)); loadUserData(user.id); showApp(); } else alert('بيانات الدخول غير صحيحة'); }
-function register() { const n = document.getElementById('regName').value; const e = document.getElementById('regEmail').value; const p = document.getElementById('regPassword').value; if (!n || !e || !p) { alert('أكمل جميع الحقول'); return; } const users = JSON.parse(localStorage.getItem('islamicUsers') || '[]'); if (users.find(u => u.email === e)) { alert('البريد مسجل مسبقاً'); return; } const user = { id: Date.now().toString(), name: escapeHtml(n), email: e, password: hashLocalPassword(p) }; users.push(user); localStorage.setItem('islamicUsers', JSON.stringify(users)); authState = { isLoggedIn: true, user, isGuest: false }; localStorage.setItem('islamicAuth', JSON.stringify(authState)); state = getDefaultState(); saveUserData(user.id); showApp(); }
+async function login() {
+  const e = document.getElementById('authEmail').value.trim();
+  const p = document.getElementById('authPassword').value;
+  if (!e || !p) { showNotification('تنبيه', 'أدخل البريد وكلمة المرور'); return; }
+  if (!isValidEmail(e)) { showNotification('تنبيه', 'البريد الإلكتروني غير صحيح'); return; }
+  if (isLoginLocked(e)) {
+    const remaining = Math.ceil(loginRemainingMs(e) / 1000);
+    showNotification('تم قفل الدخول', 'حاول بعد ' + remaining + ' ثانية');
+    return;
+  }
+  const users = JSON.parse(localStorage.getItem('islamicUsers') || '[]');
+  const matched = users.find(u => u.email === e);
+  if (!matched) { recordLoginAttempt(e, false); showNotification('خطأ', 'بيانات الدخول غير صحيحة'); return; }
+  let valid = false;
+  if (matched.salt) {
+    valid = matched.password === await secureHashLocalPassword(p, matched.salt);
+  } else if (matched.password && matched.password.startsWith('h_')) {
+    valid = matched.password === legacyHashLocalPassword(p);
+    if (valid) {
+      matched.salt = generateLocalSalt();
+      matched.password = await secureHashLocalPassword(p, matched.salt);
+      const idx = users.findIndex(u => u.email === e);
+      if (idx >= 0) users[idx] = matched;
+      try { localStorage.setItem('islamicUsers', JSON.stringify(users)); } catch (err) {}
+    }
+  }
+  if (!valid) { recordLoginAttempt(e, false); showNotification('خطأ', 'بيانات الدخول غير صحيحة'); return; }
+  recordLoginAttempt(e, true);
+  authState = { isLoggedIn: true, user: matched, isGuest: false };
+  localStorage.setItem('islamicAuth', JSON.stringify(authState));
+  loadUserData(matched.id);
+  showApp();
+}
+async function register() {
+  const n = sanitizeInput(document.getElementById('regName').value, 50);
+  const e = document.getElementById('regEmail').value.trim();
+  const p = document.getElementById('regPassword').value;
+  if (!n || !e || !p) { showNotification('تنبيه', 'أكمل جميع الحقول'); return; }
+  if (n.length < 2) { showNotification('تنبيه', 'الاسم يجب أن يكون حرفين على الأقل'); return; }
+  if (!isValidEmail(e)) { showNotification('تنبيه', 'البريد الإلكتروني غير صحيح'); return; }
+  if (p.length < 6) { showNotification('تنبيه', 'كلمة المرور 6 أحرف على الأقل'); return; }
+  const users = JSON.parse(localStorage.getItem('islamicUsers') || '[]');
+  if (users.find(u => u.email === e)) { showNotification('تنبيه', 'البريد مسجل مسبقاً'); return; }
+  const salt = generateLocalSalt();
+  const user = { id: Date.now().toString(), name: n, email: e, salt: salt, password: await secureHashLocalPassword(p, salt), createdAt: new Date().toISOString() };
+  users.push(user);
+  localStorage.setItem('islamicUsers', JSON.stringify(users));
+  authState = { isLoggedIn: true, user, isGuest: false };
+  localStorage.setItem('islamicAuth', JSON.stringify(authState));
+  state = getDefaultState();
+  saveUserData(user.id);
+  showApp();
+}
 function guestLogin() { authState = { isLoggedIn: true, user: { id: 'guest-' + Date.now(), name: 'ضيف', email: '' }, isGuest: true }; localStorage.setItem('islamicAuth', JSON.stringify(authState)); if (!localStorage.getItem('islamicLevels')) { state = getDefaultState(); saveState(); } else loadState(); showApp(); }
 function logout() { if (confirm('تسجيل الخروج؟')) { authState = { isLoggedIn: false, user: null, isGuest: false }; localStorage.removeItem('islamicAuth'); location.reload(); } }
 function loadUserData(userId) { const s = localStorage.getItem('islamicLevels_' + userId); if (s) state = { ...getDefaultState(), ...JSON.parse(s) }; else { state = getDefaultState(); saveUserData(userId); } }
@@ -296,7 +423,7 @@ function renderTracker() {
   if (!unlock.canUnlock && state.level < 5) {
     html += '<div class="card" style="background: #FEF3C7; border-color: #F59E0B; margin-bottom: 12px;">';
     html += '<div style="font-weight: 800; font-size: 14px;">🔒 قفل المستوى التالي</div>';
-    html += '<div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">' + unlock.reason + '</div>';
+    html += '<div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">' + escapeHtml(unlock.reason) + '</div>';
     html += '<div class="progress-container" style="margin-top: 8px;"><div class="progress-bar" style="width: ' + Math.round((state.totalDays / (unlock.daysRequired || 30)) * 100) + '%;"></div></div>';
     html += '<div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">' + state.totalDays + '/' + (unlock.daysRequired || 30) + ' يوم</div>';
     html += '</div>';
@@ -379,7 +506,15 @@ function checkLevelUnlock(state) {
 function renderTasbih() { document.getElementById('tasbihText').textContent = state.tasbihText; document.getElementById('tasbihCounter').textContent = state.tasbihCount; document.getElementById('tasbihTarget').textContent = state.tasbihTarget; document.getElementById('tasbihTotal').textContent = state.tasbihTotal; }
 function incrementTasbih() { state.tasbihCount++; state.tasbihTotal++; vibrate(state.vibrationEnabled ? 30 : 0); if (state.tasbihCount >= state.tasbihTarget) { state.gems += 5; state.xp = (state.xp || 0) + 5; state.tasbihCount = 0; vibrate([100, 50, 100]); updateHeaderGems(); } saveState(); document.getElementById('tasbihCounter').textContent = state.tasbihCount; document.getElementById('tasbihTotal').textContent = state.tasbihTotal; }
 function resetTasbih() { state.tasbihCount = 0; saveState(); renderTasbih(); }
-function changeTasbihText(text) { state.tasbihText = text; state.tasbihCount = 0; saveState(); renderTasbih(); vibrate(50); }
+function changeTasbihText(text) {
+  const safe = sanitizeInput(prompt('نص التسبيح:', text || state.tasbihText) || '', 100);
+  if (!safe) return;
+  state.tasbihText = safe;
+  state.tasbihCount = 0;
+  saveState();
+  renderTasbih();
+  vibrate(50);
+}
 
 // ==================== SHOP ====================
 let currentShopCategory = 'dailyRewards';
@@ -530,7 +665,7 @@ function renderFamily() {
       familyManager.members.forEach(m => {
         html += '<div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid var(--border);">';
         html += '<div style="width: 40px; height: 40px; border-radius: 50%; background: ' + (m.role === 'parent' ? '#3B82F6' : '#10B981') + '; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px;">' + (m.role === 'parent' ? '👨' : '👧') + '</div>';
-        html += '<div style="flex: 1;"><div style="font-weight: 700;">' + m.name + '</div><div style="font-size: 12px; color: var(--text-muted);">🔥 ' + (m.streak || 0) + ' | 💎 ' + (m.gems || 0) + '</div></div>';
+        html += '<div style="flex: 1;"><div style="font-weight: 700;">' + escapeHtml(m.name) + '</div><div style="font-size: 12px; color: var(--text-muted);">🔥 ' + (m.streak || 0) + ' | 💎 ' + (m.gems || 0) + '</div></div>';
         html += '<div style="font-size: 10px; padding: 4px 8px; border-radius: 8px; background: ' + (m.isOnline ? '#D1FAE5' : '#F3F4F6') + '; color: ' + (m.isOnline ? '#059669' : '#6B7280') + ';">' + (m.isOnline ? 'متصل' : 'غير متصل') + '</div>';
         html += '</div>';
       });
@@ -543,9 +678,9 @@ function renderFamily() {
         html += '<div class="card"><div style="font-weight: 800; margin-bottom: 12px;">📬 طلبات معلقة (' + pending.length + ')</div>';
         pending.forEach(req => {
           html += '<div style="padding: 12px; border-bottom: 1px solid var(--border);">';
-          html += '<div style="font-weight: 700;">' + req.childName + ': ' + req.type + '</div>';
+          html += '<div style="font-weight: 700;">' + escapeHtml(req.childName) + ': ' + escapeHtml(req.type) + '</div>';
           if (req.type === 'money') html += '<div style="font-size: 14px; color: #F59E0B;">💰 ' + convertGemsToMad(req.amount) + ' MAD</div>';
-          if (req.message) html += '<div style="font-size: 13px; color: var(--text-muted);">' + req.message + '</div>';
+          if (req.message) html += '<div style="font-size: 13px; color: var(--text-muted);">' + escapeHtml(req.message) + '</div>';
           html += '<div style="display: flex; gap: 8px; margin-top: 8px;">';
           html += '<button class="btn btn-success" style="flex: 1; padding: 8px; font-size: 12px;" onclick="approveRequest(\'' + req.id + '\')">✓ قبول</button>';
           html += '<button class="btn" style="flex: 1; padding: 8px; font-size: 12px; background: #FEE2E2; color: #EF4444;" onclick="rejectRequest(\'' + req.id + '\')">✗ رفض</button>';
@@ -568,7 +703,7 @@ function renderFamily() {
 }
 
 function showCreateFamily() {
-  const name = prompt('اسم العائلة:');
+  const name = sanitizeInput(prompt('اسم العائلة:') || '', 50);
   if (!name) return;
   familyManager = new FamilyManager();
   const result = familyManager.createFamily(name);
@@ -576,25 +711,26 @@ function showCreateFamily() {
   state.familyRole = 'parent';
   saveState();
   renderFamily();
-  alert('✅ تم إنشاء العائلة!\nكود العائلة: ' + result.parentCode);
+  showNotification('تم', 'تم إنشاء العائلة! كود: ' + result.parentCode);
 }
 
 function showJoinFamily() {
-  const code = prompt('كود العائلة (6 أحرف):');
-  if (!code || code.length !== 6) { alert('كود غير صالح'); return; }
-  const name = prompt('اسمك:');
+  const code = (prompt('كود العائلة (6 أحرف):') || '').toUpperCase().trim();
+  if (!code || code.length !== 6) { showNotification('خطأ', 'كود غير صالح'); return; }
+  const name = sanitizeInput(prompt('اسمك:') || '', 50);
   if (!name) return;
-  
+
   familyManager = new FamilyManager();
   familyManager.loadFamily();
-  familyManager.joinFamily(name, code.toUpperCase());
-  
+  const result = familyManager.joinFamily(name, code);
+  if (result && result.error) { showNotification('خطأ', result.error); return; }
+
   state.familyId = 'family-' + code;
   state.familyRole = 'child';
   state.parentId = 'parent'; // Will be set by actual parent
   saveState();
   renderFamily();
-  alert('✅ تم الانضمام!');
+  showNotification('تم', 'تم الانضمام!');
 }
 
 function approveRequest(requestId) { if (familyManager) { familyManager.approveRequest(requestId); renderFamily(); alert('✅ تمت الموافقة!'); } }
@@ -715,7 +851,7 @@ function requestMoneyGift() {
   if (!amount || amount < 100) { alert('الحد الأدنى 100 جوهرة'); return; }
   if (amount > state.gems) { alert('جواهر غير كافية'); return; }
   
-  const message = document.getElementById('requestMessage')?.value || '';
+  const message = sanitizeInput(document.getElementById('requestMessage')?.value || '', 200);
   
   if (familyManager) {
     familyManager.sendRequest(state.childId || 'child', 'money', amount, message);
@@ -741,7 +877,7 @@ function renderMessages() {
     const msgs = familyManager.getMessages(state.childId || state.parentId, member.id);
     const lastMsg = msgs[msgs.length - 1];
     
-    html += '<div class="card" style="margin-bottom: 12px; cursor: pointer;" onclick="openChat(\'' + escapeHtml(member.id) + '\')">';
+    html += '<div class="card" style="margin-bottom: 12px; cursor: pointer;" data-member-id="' + escapeAttr(member.id) + '" onclick="openChat(\'' + escapeJsString(member.id) + '\')">';
     html += '<div style="display: flex; align-items: center; gap: 12px;">';
     html += '<div style="width: 40px; height: 40px; border-radius: 50%; background: ' + (member.role === 'parent' ? '#3B82F6' : '#10B981') + '; display: flex; align-items: center; justify-content: center; color: white;">' + (member.role === 'parent' ? '👨' : '👧') + '</div>';
     html += '<div style="flex: 1;"><div style="font-weight: 700;">' + escapeHtml(member.name) + '</div>';
@@ -778,7 +914,7 @@ function openChat(memberId) {
 
   html += '<div style="display: flex; gap: 8px;">';
   html += '<input type="text" id="chatInput" placeholder="اكتب رسالة..." style="flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 20px; text-align: right;" />';
-  html += '<button class="btn btn-primary" style="width: auto; padding: 12px 20px; border-radius: 20px;" onclick="sendMessage(\'' + escapeHtml(memberId) + '\')">إرسال</button>';
+  html += '<button class="btn btn-primary" style="width: auto; padding: 12px 20px; border-radius: 20px;" onclick="sendMessage(\'' + escapeJsString(memberId) + '\')">إرسال</button>';
   html += '</div>';
   
   document.getElementById('messagesContent').innerHTML = html;
@@ -832,7 +968,13 @@ function renderSettings() {
   }
 }
 function toggleDarkMode() { state.darkMode = !state.darkMode; updateTheme(); saveState(); renderSettings(); }
-function updateTheme() { document.documentElement.setAttribute('data-theme', state.darkMode ? 'dark' : 'light'); }
+function updateTheme() {
+  document.documentElement.setAttribute('data-theme', state.darkMode ? 'dark' : 'light');
+  try {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', state.darkMode ? '#0F172A' : '#8B5CF6');
+  } catch (e) {}
+}
 function toggleNotifications() {
   state.notifEnabled = !state.notifEnabled;
   if (state.notifEnabled && 'Notification' in window) {
@@ -874,12 +1016,17 @@ function importData() {
       reader.onload = (ev) => {
         try {
           const data = JSON.parse(ev.target.result);
-          Object.assign(state, data);
+          if (typeof data !== 'object' || data === null || Array.isArray(data)) throw new Error('invalid');
+          // Whitelist of safe top-level keys
+          const allowed = ['level','xp','streak','longestStreak','gems','totalDays','todayTasks','completedChallenges','achievements','darkMode','notifEnabled','soundEnabled','vibrationEnabled','referralCode','streakFreezes','dailyHistory','goals','totalPrayers','totalQuran','totalDhikr','prayerTimesEnabled','prayerTimes','location','todayPrayers','todayAdhkar','tasbihCount','tasbihTotal','tasbihText','tasbihTarget','purchasedItems','equippedAvatar','equippedTheme','equippedBadge','doubleXPTimer','shieldActive','lastLoginDate','loginStreak','totalLogins','dailyRewardClaimed','claimedDailyRewards','charityTotal','familyId','familyRole','parentId','childId'];
+          const safe = {};
+          for (const k of allowed) if (k in data) safe[k] = data[k];
+          Object.assign(state, safe);
           saveState();
-          alert('✅ تم الاستيراد بنجاح!');
+          showNotification('تم', 'تم الاستيراد بنجاح!');
           location.reload();
         } catch (err) {
-          alert('❌ ملف غير صالح');
+          showNotification('خطأ', 'ملف غير صالح');
         }
       };
       reader.readAsText(file);
@@ -1124,7 +1271,7 @@ function renderCommunity() {
     const isCurrentUser = user.isCurrentUser;
     html += '<div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); ' + (isCurrentUser ? 'background: rgba(139, 92, 246, 0.1); border-radius: 8px;' : '') + '">';
     html += '<div style="width: 32px; font-size: 20px; font-weight: 900; text-align: center;">' + (user.medal || '#' + user.rank) + '</div>';
-    html += '<div style="flex: 1; margin: 0 12px;"><div style="font-weight: 700;">' + user.name + (isCurrentUser ? ' (أنت)' : '') + '</div>';
+    html += '<div style="flex: 1; margin: 0 12px;"><div style="font-weight: 700;">' + escapeHtml(user.name) + (isCurrentUser ? ' (أنت)' : '') + '</div>';
     html += '<div style="font-size: 11px; color: var(--text-muted);">المستوى ' + user.level + '</div></div>';
     html += '<div style="text-align: right;"><div style="font-weight: 800; color: #F97316;">🔥 ' + user.streak + '</div>';
     html += '<div style="font-size: 11px; color: var(--text-muted);">💎 ' + user.gems + '</div></div>';
