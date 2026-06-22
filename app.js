@@ -1181,8 +1181,8 @@ function renderSettings() {
   // Populate level selector
   const levelSelector = document.getElementById('levelSelector');
   if (levelSelector) {
-    levelSelector.innerHTML = LEVELS.map(level => 
-      '<button class="btn ' + (state.level === level.id ? 'btn-primary' : '') + '" style="width: auto; padding: 8px 16px; font-size: 13px;" onclick="selectLevel(' + level.id + ')">' + level.icon + ' ' + level.id + '</button>'
+    levelSelector.innerHTML = LEVELS.map(level =>
+      '<button class="btn ' + (state.level === level.id ? 'btn-primary' : '') + '" style="width: auto; padding: 8px 16px; font-size: 13px;" onclick="selectLevel(' + level.id + ')">' + escapeHtml(level.icon) + ' ' + level.id + '</button>'
     ).join('');
   }
 }
