@@ -1,4 +1,4 @@
-const CACHE_NAME = 'islamic-levels-v9';
+const CACHE_NAME = 'islamic-levels-v10';
 const ASSETS = [
   '/',
   '/index.html',

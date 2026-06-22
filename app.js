@@ -956,17 +956,50 @@ function renderTracker() {
     html += '</div>';
   }
 
-  html += '<div class="card"><div style="display: flex; justify-content: space-between; margin-bottom: 12px;"><span style="font-weight: 800;">التحديات اليومية</span><span style="color: var(--primary); font-weight: 900;" id="progressPercent">0%</span></div><div class="progress-container"><div class="progress-bar" id="progressBar" style="width: 0%"></div></div><div style="display: flex; justify-content: space-between; margin-top: 12px;"><span style="font-size: 13px; color: var(--text-muted);">🔥 السلسلة: <span id="streakCount">' + state.streak + '</span></span><span style="font-size: 13px; color: var(--text-muted);" id="todayDate">' + today + '</span></div></div>';
-  html += '<div class="card" style="display: none;" id="rewardBanner"></div>';
-
-  // Today's challenges
+  // Today's challenges — pre-compute for the progress ring
   const challenges = getDailyChallenges(level);
   if (!Array.isArray(state.todayChallenges)) state.todayChallenges = {};
+  let preCompleted = 0;
+  challenges.forEach(function(ch) {
+    const entry = state.todayChallenges[ch.id];
+    if (entry && (entry.progress || 0) >= ch.target) preCompleted++;
+  });
+  const prePct = challenges.length ? Math.round((preCompleted / challenges.length) * 100) : 0;
+
+  // Circular progress ring SVG (radius 50)
+  const ringRadius = 50;
+  const ringCirc = 2 * Math.PI * ringRadius;
+  const ringOffset = ringCirc - (prePct / 100) * ringCirc;
+  const ringColor = prePct === 100 ? '#10B981' : prePct >= 50 ? '#F59E0B' : '#8B5CF6';
+
+  html += '<div class="card" style="display: flex; align-items: center; gap: 16px;">';
+  html += '<div style="position: relative; width: 120px; height: 120px; flex-shrink: 0;">';
+  html += '<svg width="120" height="120" viewBox="0 0 120 120" style="transform: rotate(-90deg);">';
+  html += '<circle cx="60" cy="60" r="' + ringRadius + '" fill="none" stroke="var(--border)" stroke-width="10"/>';
+  html += '<circle cx="60" cy="60" r="' + ringRadius + '" fill="none" stroke="' + ringColor + '" stroke-width="10" stroke-dasharray="' + ringCirc + '" stroke-dashoffset="' + ringOffset + '" stroke-linecap="round" style="transition: stroke-dashoffset 0.5s ease, stroke 0.3s ease;"/>';
+  html += '</svg>';
+  html += '<div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">';
+  html += '<div id="progressPercent" style="font-size: 24px; font-weight: 900; color: ' + ringColor + ';">' + prePct + '%</div>';
+  html += '<div style="font-size: 10px; color: var(--text-muted); margin-top: -2px;">' + preCompleted + '/' + challenges.length + '</div>';
+  html += '</div></div>';
+  html += '<div style="flex: 1; min-width: 0;">';
+  html += '<div style="font-weight: 800; font-size: 16px; margin-bottom: 4px;">التحديات اليومية</div>';
+  html += '<div style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;" id="motivationText">' + getMotivation(prePct, state.streak) + '</div>';
+  html += '<div style="display: flex; gap: 8px; flex-wrap: wrap;">';
+  html += '<span style="font-size: 12px; padding: 4px 10px; background: var(--bg); border-radius: 12px;">🔥 ' + state.streak + ' يوم</span>';
+  html += '<span style="font-size: 12px; padding: 4px 10px; background: var(--bg); border-radius: 12px;">💎 ' + state.gems + '</span>';
+  html += '<span style="font-size: 12px; padding: 4px 10px; background: var(--bg); border-radius: 12px;">⭐ ' + (state.xp || 0) + ' XP</span>';
+  html += '</div>';
+  html += '</div></div>';
+  html += '<div class="progress-bar" id="progressBar" style="display:none;"></div>'; // hidden, ring replaces
+  html += '<div class="card" style="display: none;" id="rewardBanner"></div>';
+
+  // Today's challenges list
   const summaryLines = [];
   let totalCompleted = 0;
   let totalXP = 0;
 
-  html += '<div style="font-weight: 800; margin-bottom: 8px;">🎯 تحديات اليوم (' + challenges.length + ')</div>';
+  html += '<div style="font-weight: 800; margin-bottom: 8px; margin-top: 8px;">🎯 تحديات اليوم (' + challenges.length + ')</div>';
   challenges.forEach(function(ch) {
     const entry = state.todayChallenges[ch.id] || { progress: 0, notes: '' };
     const progress = Math.min(entry.progress || 0, ch.target);
@@ -1016,6 +1049,16 @@ function renderTracker() {
   if (sumEl) sumEl.innerHTML = sumHtml;
 
   updateProgress();
+}
+
+// Get a motivational message based on progress + streak
+function getMotivation(pct, streak) {
+  if (pct === 100) return '🎉 رائع! أنهيت كل تحديات اليوم. استرح وعد غداً.';
+  if (pct >= 75) return '💪 قريب جداً! باقي القليل فقط لإكمال اليوم.';
+  if (pct >= 50) return '⚡ أنت في المنتصف! استمر حتى النهاية.';
+  if (pct >= 25) return '🌱 بداية جيدة. كل خطوة تقربك من الهدف.';
+  if (streak > 0) return '🔥 سلسلتك مستمرة (' + streak + ' يوم). حافظ عليها!';
+  return '📿 ابدأ بتحدٍ واحد فقط. كل رحلة تبدأ بخطوة.';
 }
 
 // Increment a challenge's progress by N (default 1)
@@ -1099,6 +1142,21 @@ function updateProgress() {
   const progressBarEl = document.getElementById('progressBar');
   if (progressPercentEl) progressPercentEl.textContent = pct + '%';
   if (progressBarEl) progressBarEl.style.width = pct + '%';
+  // Update the progress ring (if present) by finding the second circle in the
+  // SVG and updating its stroke-dashoffset based on pct.
+  const ring = document.querySelector('#tasksContainer svg circle:nth-child(2)');
+  if (ring) {
+    const ringRadius = parseFloat(ring.getAttribute('r')) || 50;
+    const ringCirc = 2 * Math.PI * ringRadius;
+    const ringOffset = ringCirc - (pct / 100) * ringCirc;
+    ring.setAttribute('stroke-dashoffset', ringOffset);
+    const color = pct === 100 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#8B5CF6';
+    ring.setAttribute('stroke', color);
+    if (progressPercentEl) progressPercentEl.style.color = color;
+  }
+  // Update the motivation text
+  const motEl = document.getElementById('motivationText');
+  if (motEl) motEl.textContent = getMotivation(pct, state.streak);
   const today = getToday();
   const wasRewardedToday = state.completionRewardedDate === today;
   const dayFinalized = state.dayFinalizedDate === today;
