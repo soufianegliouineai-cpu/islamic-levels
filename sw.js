@@ -1,4 +1,4 @@
-const CACHE_NAME = 'islamic-levels-v4';
+const CACHE_NAME = 'islamic-levels-v5';
 const ASSETS = [
   '/',
   '/index.html',
@@ -41,11 +41,35 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Fetch
+// Fetch — cache-first for same-origin, network-first (with cache fallback) for cross-origin
 self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then(res => res || fetch(e.request))
-  );
+  const req = e.request;
+  if (req.method !== 'GET') return; // don't intercept POST/PATCH etc.
+  const url = new URL(req.url);
+  const isSameOrigin = url.origin === self.location.origin;
+  if (isSameOrigin) {
+    e.respondWith(
+      caches.match(req).then(res => res || fetch(req).then(net => {
+        // Cache successful same-origin GETs for next time
+        if (net && net.ok) {
+          const clone = net.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(req, clone)).catch(() => {});
+        }
+        return net;
+      }).catch(() => caches.match('/index.html')))
+    );
+  } else {
+    // Cross-origin: network-first, fall back to cached copy if available
+    e.respondWith(
+      fetch(req).then(net => {
+        if (net && net.ok) {
+          const clone = net.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(req, clone)).catch(() => {});
+        }
+        return net;
+      }).catch(() => caches.match(req))
+    );
+  }
 });
 
 // Push notifications
