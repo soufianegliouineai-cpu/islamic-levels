@@ -17,6 +17,7 @@ let state = {
 // ==================== CONSTANTS ====================
 const GEM_TO_MAD_RATE = 0.2;
 const LEVEL_REQUIREMENTS = { 2: 30, 3: 60, 4: 90, 5: 120 };
+const APP_VERSION = '2026.06.22-2';
 
 const SHOP_CATEGORIES = {
   dailyRewards: {
@@ -302,6 +303,40 @@ function rolloverIfNewDay() {
   return false;
 }
 
+// Reconcile streak/totalDays with dailyHistory.
+// Recomputes the count of unique completion dates from history and caps the
+// stored counters at that count. This recovers from any state that was
+// inflated by a buggy cached app.js running before the per-day guard was in
+// place.
+function reconcileStreakWithHistory() {
+  if (!Array.isArray(state.dailyHistory)) { state.dailyHistory = []; return; }
+  const uniqueDates = Array.from(new Set(state.dailyHistory.filter(h => h && h.date && h.completed).map(h => h.date))).sort();
+  const maxDays = uniqueDates.length;
+  if (state.totalDays > maxDays) {
+    state.totalDays = maxDays;
+    saveState();
+  }
+  // Recompute current streak from the most recent consecutive completion dates
+  let streak = 0;
+  const today = getToday();
+  for (let i = uniqueDates.length - 1; i >= 0; i--) {
+    const expected = new Date(today);
+    expected.setDate(expected.getDate() - streak);
+    const expectedStr = expected.toISOString().split('T')[0];
+    if (uniqueDates[i] === expectedStr) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  // Only clamp if the stored streak is clearly wrong
+  if (state.streak > streak + 1) {
+    state.streak = streak;
+    state.longestStreak = Math.max(state.longestStreak || 0, streak);
+    saveState();
+  }
+}
+
 function loadState() {
   const s = localStorage.getItem('islamicLevels');
   if (s) state = { ...getDefaultState(), ...JSON.parse(s) };
@@ -316,6 +351,8 @@ function loadState() {
   rolloverIfNewDay();
   // Clamp any corrupted counters back to sane values.
   clampCounters();
+  // Recover from cached old code by reconciling streak/totalDays with history.
+  reconcileStreakWithHistory();
   checkDailyLogin();
   updateTheme();
 }
