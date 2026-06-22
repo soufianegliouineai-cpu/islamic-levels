@@ -380,6 +380,7 @@ async function login() {
   showApp();
 }
 async function register() {
+  rolloverIfNewDay();
   const n = sanitizeInput(document.getElementById('regName').value, 50);
   const e = document.getElementById('regEmail').value.trim();
   const p = document.getElementById('regPassword').value;
@@ -387,12 +388,20 @@ async function register() {
   if (n.length < 2) { showNotification('تنبيه', 'الاسم يجب أن يكون حرفين على الأقل'); return; }
   if (!isValidEmail(e)) { showNotification('تنبيه', 'البريد الإلكتروني غير صحيح'); return; }
   if (p.length < 6) { showNotification('تنبيه', 'كلمة المرور 6 أحرف على الأقل'); return; }
+  // Per-email registration attempt counter
+  if (isLoginLocked(e)) {
+    const remaining = Math.ceil(loginRemainingMs(e) / 1000);
+    showNotification('تم قفل التسجيل', 'حاول بعد ' + remaining + ' ثانية');
+    return;
+  }
   const users = JSON.parse(localStorage.getItem('islamicUsers') || '[]');
+  if (users.length >= 5) { showNotification('تنبيه', 'الحد الأقصى 5 حسابات على هذا الجهاز'); recordLoginAttempt(e, false); return; }
   if (users.find(u => u.email === e)) { showNotification('تنبيه', 'البريد مسجل مسبقاً'); return; }
   const salt = generateLocalSalt();
   const user = { id: Date.now().toString(), name: n, email: e, salt: salt, password: await secureHashLocalPassword(p, salt), createdAt: new Date().toISOString() };
   users.push(user);
   localStorage.setItem('islamicUsers', JSON.stringify(users));
+  recordLoginAttempt(e, true);
   authState = { isLoggedIn: true, user, isGuest: false };
   localStorage.setItem('islamicAuth', JSON.stringify(authState));
   state = getDefaultState();

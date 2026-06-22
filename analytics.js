@@ -201,8 +201,24 @@ function flattenTasks(levelId) {
     saveQueue(queue);
   }
 
-  window.logEvent = function(name, data) {
-    const entry = { t: new Date().toISOString(), type: 'event', name, data };
+  // Sensitive keys stripped from logged event data so PII / passwords / tokens
+// never make it into the monitoring queue.
+const SENSITIVE_KEYS = /password|passwd|token|secret|auth_?cookie|api_?key|salt|hash|email|phone|ssn|credit_?card/i;
+function sanitizeLogData(data, depth) {
+  depth = depth || 0;
+  if (depth > 3 || data == null) return null;
+  if (typeof data === 'string') return data.length > 500 ? data.slice(0, 500) + '...' : data;
+  if (typeof data !== 'object') return data;
+  if (Array.isArray(data)) return data.map(v => sanitizeLogData(v, depth + 1));
+  const out = {};
+  for (const k of Object.keys(data)) {
+    if (SENSITIVE_KEYS.test(k)) { out[k] = '[REDACTED]'; continue; }
+    out[k] = sanitizeLogData(data[k], depth + 1);
+  }
+  return out;
+}
+window.logEvent = function(name, data) {
+    const entry = { t: new Date().toISOString(), type: 'event', name, data: sanitizeLogData(data) };
     pushLog(entry);
     if (window.SUPABASE_URL && typeof logToSupabase === 'function') {
       try { logToSupabase('events', entry); } catch (e) {}
@@ -210,13 +226,15 @@ function flattenTasks(levelId) {
   };
 
   window.logError = function(err, context) {
+    // Sanitize URL (strip query string which may contain tokens/PII)
+    let safeUrl = location.pathname;
     const entry = {
       t: new Date().toISOString(),
       type: 'error',
       context: context || '',
       message: (err && err.message) || String(err),
       stack: (err && err.stack) || null,
-      url: location.href,
+      url: safeUrl,
       ua: navigator.userAgent
     };
     pushLog(entry);
