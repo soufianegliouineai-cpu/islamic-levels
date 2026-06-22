@@ -5,13 +5,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#8B5CF6">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>🌟 المستويات الإيمانية</title>
+  <meta name="description" content="تطبيق إسلامي شامل لتتبع العبادات اليومية - 5 مستويات إيمانية، مهام يومية، جواهر، سلاسل، إدارة عائلية، ومزامنة بين الأجهزة.">
+  <meta name="keywords" content="إسلام, عبادات, أذكار, قرآن, صلاة, tasbih, إيمان, إسلامي, PWA, تطبيق إسلامي">
+  <meta name="author" content="المستويات الإيمانية">
+  <meta name="theme-color" content="#8B5CF6" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0F172A" media="(prefers-color-scheme: dark)">
+  <meta property="og:title" content="🌟 المستويات الإيمانية">
+  <meta property="og:description" content="تطبيق إسلامي شامل لتتبع العبادات اليومية مع إدارة عائلية ومزامنة بين الأجهزة.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://islamic-levels.vercel.app">
+  <meta property="og:image" content="icons/icon-512.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://islamic-levels.vercel.app">
+  <title>🌟 المستويات الإيمانية - تطبيق العبادات الإسلامية</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="premium-redesign.css">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="premium-styles.css">
   <link rel="stylesheet" href="splash.css">
+<script>
+// Delegated click handler — converts data-action elements into event dispatches.
+// Static onclick handlers in this HTML have been replaced with data-action
+// attributes. The dynamic ones generated in app.js still use onclick="...".
+function __ilDispatch(target) {
+  let el = target;
+  while (el && el !== document.body) {
+    if (el.getAttribute && el.getAttribute('data-action')) {
+      var fn = window[el.getAttribute('data-action')];
+      if (typeof fn === 'function') {
+        var args = [];
+        var raw = el.getAttribute('data-args');
+        if (raw) {
+          try { args = JSON.parse(raw); } catch (e) { args = []; }
+        }
+        try { return fn.apply(el, args); } catch (err) { console.error(err); }
+      }
+      return;
+    }
+    el = el.parentNode;
+  }
+}
+document.addEventListener('click', function(e) { __ilDispatch(e.target); });
+</script>
 </head>
 <body>
   <a href="#main" class="skip-link">تخطي إلى المحتوى</a>
@@ -41,9 +77,9 @@
         <input type="email" id="authEmail" autocomplete="email" aria-label="البريد الإلكتروني" placeholder="البريد الإلكتروني" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 12px; font-size: 16px; text-align: right;" />
         <label for="authPassword" class="visually-hidden">كلمة المرور</label>
         <input type="password" id="authPassword" autocomplete="current-password" aria-label="كلمة المرور" placeholder="كلمة المرور" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 16px; font-size: 16px; text-align: right;" />
-        <button class="btn btn-primary" onclick="login()">تسجيل الدخول</button>
-        <p style="text-align: center; margin-top: 16px; color: var(--text-muted);">ليس لديك حساب؟ <a href="#" onclick="showRegister()" style="color: var(--primary); font-weight: 700;">إنشاء</a></p>
-        <p style="text-align: center; margin-top: 8px;"><a href="#" onclick="guestLogin()" style="color: var(--text-muted); font-size: 14px;">الدخول كضيف</a></p>
+        <button class="btn btn-primary" data-action="login" data-args=[]>تسجيل الدخول</button>
+        <p style="text-align: center; margin-top: 16px; color: var(--text-muted);">ليس لديك حساب؟ <a href="#" data-action="showRegister" data-args=[] style="color: var(--primary); font-weight: 700;">إنشاء</a></p>
+        <p style="text-align: center; margin-top: 8px;"><a href="#" data-action="guestLogin" data-args=[] style="color: var(--text-muted); font-size: 14px;">الدخول كضيف</a></p>
       </div>
       <div id="registerForm" style="display: none;">
         <label for="regName" class="visually-hidden">الاسم</label>
@@ -52,8 +88,8 @@
         <input type="email" id="regEmail" autocomplete="email" aria-label="البريد الإلكتروني" placeholder="البريد الإلكتروني" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 12px; font-size: 16px; text-align: right;" />
         <label for="regPassword" class="visually-hidden">كلمة المرور</label>
         <input type="password" id="regPassword" autocomplete="new-password" aria-label="كلمة المرور" placeholder="كلمة المرور" style="width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 16px; font-size: 16px; text-align: right;" />
-        <button class="btn btn-primary" onclick="register()">إنشاء حساب</button>
-        <p style="text-align: center; margin-top: 16px; color: var(--text-muted);">لديك حساب؟ <a href="#" onclick="showLogin()" style="color: var(--primary); font-weight: 700;">دخول</a></p>
+        <button class="btn btn-primary" data-action="register" data-args=[]>إنشاء حساب</button>
+        <p style="text-align: center; margin-top: 16px; color: var(--text-muted);">لديك حساب؟ <a href="#" data-action="showLogin" data-args=[] style="color: var(--primary); font-weight: 700;">دخول</a></p>
       </div>
     </div>
   </div>
@@ -68,7 +104,7 @@
         <div style="display: flex; gap: 12px; align-items: center;">
           <span style="font-size: 14px; font-weight: 900; color: #F59E0B;">⭐ <span id="headerXP">0</span></span>
           <span style="font-size: 14px; font-weight: 900; color: #F59E0B;">💎 <span id="headerGems">0</span></span>
-          <button onclick="showScreen('profile')" style="background: rgba(255,255,255,0.2); border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer;" id="profileBtn">👤</button>
+          <button data-action="showScreen" data-args=["'profile'"] style="background: rgba(255,255,255,0.2); border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer;" id="profileBtn">👤</button>
         </div>
       </div>
     </header>
@@ -102,19 +138,19 @@
         </div>
         <div id="levelsContainer"></div>
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 16px;">
-          <div class="card" style="text-align: center; cursor: pointer; padding: 16px;" onclick="showScreen('tasbih')">
+          <div class="card" style="text-align: center; cursor: pointer; padding: 16px;" data-action="showScreen" data-args=["'tasbih'"]>
             <div style="font-size: 32px; margin-bottom: 8px;">📿</div>
             <div style="font-weight: 700; font-size: 14px;">السبحة</div>
           </div>
-          <div class="card" style="text-align: center; cursor: pointer; padding: 16px;" onclick="showScreen('qibla')">
+          <div class="card" style="text-align: center; cursor: pointer; padding: 16px;" data-action="showScreen" data-args=["'qibla'"]>
             <div style="font-size: 32px; margin-bottom: 8px;">🧭</div>
             <div style="font-weight: 700; font-size: 14px;">القبلة</div>
           </div>
-          <div class="card" style="text-align: center; cursor: pointer; padding: 16px;" onclick="showScreen('dua')">
+          <div class="card" style="text-align: center; cursor: pointer; padding: 16px;" data-action="showScreen" data-args=["'dua'"]>
             <div style="font-size: 32px; margin-bottom: 8px;">🤲</div>
             <div style="font-weight: 700; font-size: 14px;">الأدعية</div>
           </div>
-          <div class="card" style="text-align: center; cursor: pointer; padding: 16px;" onclick="showScreen('shop')">
+          <div class="card" style="text-align: center; cursor: pointer; padding: 16px;" data-action="showScreen" data-args=["'shop'"]>
             <div style="font-size: 32px; margin-bottom: 8px;">🛒</div>
             <div style="font-weight: 700; font-size: 14px;">المتجر</div>
           </div>
@@ -162,15 +198,15 @@
         </div>
         <div class="card" style="text-align: center;">
           <div style="font-size: 16px; font-weight: 700; margin-bottom: 16px;" id="tasbihText">سبحان الله وبحمده</div>
-          <div id="tasbihCounter" style="font-size: 72px; font-weight: 900; color: var(--primary); margin: 20px 0; cursor: pointer; user-select: none; transition: transform 0.1s;" onclick="incrementTasbih()">0</div>
+          <div id="tasbihCounter" style="font-size: 72px; font-weight: 900; color: var(--primary); margin: 20px 0; cursor: pointer; user-select: none; transition: transform 0.1s;" data-action="incrementTasbih" data-args=[]>0</div>
           <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">الهدف: <span id="tasbihTarget">33</span></div>
           <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap;">
-            <button class="btn" style="width: auto; padding: 8px 12px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('سبحان الله وبحمده')">سبحان الله</button>
-            <button class="btn" style="width: auto; padding: 8px 12px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('الحمد لله')">الحمد لله</button>
-            <button class="btn" style="width: auto; padding: 8px 12px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('الله أكبر')">الله أكبر</button>
-            <button class="btn" style="width: auto; padding: 8px 12px; font-size: 13px; background: var(--bg);" onclick="changeTasbihText('أستغفر الله')">أستغفر الله</button>
+            <button class="btn" style="width: auto; padding: 8px 12px; font-size: 13px; background: var(--bg);" data-action="changeTasbihText" data-args=["'\u0633\u0628\u062d\u0627\u0646 \u0627\u0644\u0644\u0647 \u0648\u0628\u062d\u0645\u062f\u0647'"]>سبحان الله</button>
+            <button class="btn" style="width: auto; padding: 8px 12px; font-size: 13px; background: var(--bg);" data-action="changeTasbihText" data-args=["'\u0627\u0644\u062d\u0645\u062f \u0644\u0644\u0647'"]>الحمد لله</button>
+            <button class="btn" style="width: auto; padding: 8px 12px; font-size: 13px; background: var(--bg);" data-action="changeTasbihText" data-args=["'\u0627\u0644\u0644\u0647 \u0623\u0643\u0628\u0631'"]>الله أكبر</button>
+            <button class="btn" style="width: auto; padding: 8px 12px; font-size: 13px; background: var(--bg);" data-action="changeTasbihText" data-args=["'\u0623\u0633\u062a\u063a\u0641\u0631 \u0627\u0644\u0644\u0647'"]>أستغفر الله</button>
           </div>
-          <button class="btn btn-primary" style="width: auto; padding: 10px 20px;" onclick="resetTasbih()">🔄 إعادة</button>
+          <button class="btn btn-primary" style="width: auto; padding: 10px 20px;" data-action="resetTasbih" data-args=[]>🔄 إعادة</button>
           <div style="font-size: 14px; font-weight: 700; margin-top: 16px;">الإجمالي: <span id="tasbihTotal" style="color: var(--primary);">0</span></div>
         </div>
       </section>
@@ -216,12 +252,12 @@
         
         <!-- Shop Tabs -->
         <div style="display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto;">
-          <button class="btn shop-tab active" onclick="showShopCategory('powerups')" data-cat="powerups" style="width: auto; padding: 8px 16px; font-size: 13px;">⚡ تعزيزات</button>
-          <button class="btn shop-tab" onclick="showShopCategory('avatars')" data-cat="avatars" style="width: auto; padding: 8px 16px; font-size: 13px;">👤 صور</button>
-          <button class="btn shop-tab" onclick="showShopCategory('themes')" data-cat="themes" style="width: auto; padding: 8px 16px; font-size: 13px;">🎨 ثيمات</button>
-          <button class="btn shop-tab" onclick="showShopCategory('sounds')" data-cat="sounds" style="width: auto; padding: 8px 16px; font-size: 13px;">🔊 أصوات</button>
-          <button class="btn shop-tab" onclick="showShopCategory('badges')" data-cat="badges" style="width: auto; padding: 8px 16px; font-size: 13px;">🏅 شارات</button>
-          <button class="btn shop-tab" onclick="showShopCategory('gifts')" data-cat="gifts" style="width: auto; padding: 8px 16px; font-size: 13px;">🎁 هدايا</button>
+          <button class="btn shop-tab active" data-action="showShopCategory" data-args=["'powerups'"] data-cat="powerups" style="width: auto; padding: 8px 16px; font-size: 13px;">⚡ تعزيزات</button>
+          <button class="btn shop-tab" data-action="showShopCategory" data-args=["'avatars'"] data-cat="avatars" style="width: auto; padding: 8px 16px; font-size: 13px;">👤 صور</button>
+          <button class="btn shop-tab" data-action="showShopCategory" data-args=["'themes'"] data-cat="themes" style="width: auto; padding: 8px 16px; font-size: 13px;">🎨 ثيمات</button>
+          <button class="btn shop-tab" data-action="showShopCategory" data-args=["'sounds'"] data-cat="sounds" style="width: auto; padding: 8px 16px; font-size: 13px;">🔊 أصوات</button>
+          <button class="btn shop-tab" data-action="showShopCategory" data-args=["'badges'"] data-cat="badges" style="width: auto; padding: 8px 16px; font-size: 13px;">🏅 شارات</button>
+          <button class="btn shop-tab" data-action="showShopCategory" data-args=["'gifts'"] data-cat="gifts" style="width: auto; padding: 8px 16px; font-size: 13px;">🎁 هدايا</button>
         </div>
         
         <div id="shopItemsContainer"></div>
@@ -280,21 +316,21 @@
         <div class="card" style="margin-top: 12px;">
           <div style="font-weight: 800; margin-bottom: 12px;">📤 البيانات</div>
           <div style="display: flex; gap: 8px;">
-            <button class="btn btn-primary" style="flex: 1;" onclick="exportData()">تصدير</button>
-            <button class="btn btn-success" style="flex: 1;" onclick="importData()">استيراد</button>
+            <button class="btn btn-primary" style="flex: 1;" data-action="exportData" data-args=[]>تصدير</button>
+            <button class="btn btn-success" style="flex: 1;" data-action="importData" data-args=[]>استيراد</button>
           </div>
         </div>
-        <button class="btn btn-primary" style="background: var(--danger); margin-top: 12px;" onclick="logout()">🚪 تسجيل الخروج</button>
+        <button class="btn btn-primary" style="background: var(--danger); margin-top: 12px;" data-action="logout" data-args=[]>🚪 تسجيل الخروج</button>
       </section>
 
       <!-- Settings -->
       <section class="screen" id="settingsScreen">
         <div class="card">
           <div style="font-weight: 800; margin-bottom: 16px;">⚙️ الإعدادات</div>
-          <div class="toggle-row"><span class="toggle-label">🌙 الوضع الليلي</span><div class="toggle" id="darkModeToggle" onclick="toggleDarkMode()"></div></div>
-          <div class="toggle-row"><span class="toggle-label">🔔 إشعارات الصلاة</span><div class="toggle" id="notifToggle" onclick="toggleNotifications()"></div></div>
-          <div class="toggle-row"><span class="toggle-label">🔊 الصوت</span><div class="toggle" id="soundToggle" onclick="toggleSound()"></div></div>
-          <div class="toggle-row"><span class="toggle-label">📳 الاهتزاز</span><div class="toggle" id="vibrationToggle" onclick="toggleVibration()"></div></div>
+          <div class="toggle-row"><span class="toggle-label">🌙 الوضع الليلي</span><div class="toggle" id="darkModeToggle" data-action="toggleDarkMode" data-args=[]></div></div>
+          <div class="toggle-row"><span class="toggle-label">🔔 إشعارات الصلاة</span><div class="toggle" id="notifToggle" data-action="toggleNotifications" data-args=[]></div></div>
+          <div class="toggle-row"><span class="toggle-label">🔊 الصوت</span><div class="toggle" id="soundToggle" data-action="toggleSound" data-args=[]></div></div>
+          <div class="toggle-row"><span class="toggle-label">📳 الاهتزاز</span><div class="toggle" id="vibrationToggle" data-action="toggleVibration" data-args=[]></div></div>
         </div>
         <div class="card" style="margin-top: 12px;">
           <div style="font-weight: 800; margin-bottom: 12px;">اختر المستوى</div>
@@ -303,11 +339,11 @@
         <div class="card" style="margin-top: 12px;">
           <div style="font-weight: 800; margin-bottom: 12px;">📤 البيانات</div>
           <div style="display: flex; gap: 8px;">
-            <button class="btn btn-primary" style="flex: 1;" onclick="exportData()">تصدير</button>
-            <button class="btn btn-success" style="flex: 1;" onclick="importData()">استيراد</button>
+            <button class="btn btn-primary" style="flex: 1;" data-action="exportData" data-args=[]>تصدير</button>
+            <button class="btn btn-success" style="flex: 1;" data-action="importData" data-args=[]>استيراد</button>
           </div>
         </div>
-        <button class="btn btn-primary" onclick="resetData()" style="background: var(--danger); margin-top: 12px;">🗑️ مسح البيانات</button>
+        <button class="btn btn-primary" data-action="resetData" data-args=[] style="background: var(--danger); margin-top: 12px;">🗑️ مسح البيانات</button>
       </section>
 
       <!-- Analytics Screen -->
@@ -339,23 +375,23 @@
     </main>
 
     <nav class="nav">
-      <button class="nav-item active" onclick="showScreen('home')" data-screen="home" aria-label="الرئيسية">
+      <button class="nav-item active" data-action="showScreen" data-args=["'home'"] data-screen="home" aria-label="الرئيسية">
         <span class="nav-icon" style="display: inline-flex; width: 24px; height: 24px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
         <span>الرئيسية</span>
       </button>
-      <button class="nav-item" onclick="showScreen('tracker')" data-screen="tracker" aria-label="تتبع العبادات">
+      <button class="nav-item" data-action="showScreen" data-args=["'tracker'"] data-screen="tracker" aria-label="تتبع العبادات">
         <span class="nav-icon" style="display: inline-flex; width: 24px; height: 24px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
         <span>التتبع</span>
       </button>
-      <button class="nav-item" onclick="showScreen('shop')" data-screen="shop" aria-label="المتجر والمكافآت">
+      <button class="nav-item" data-action="showScreen" data-args=["'shop'"] data-screen="shop" aria-label="المتجر والمكافآت">
         <span class="nav-icon" style="display: inline-flex; width: 24px; height: 24px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
         <span>المتجر</span>
       </button>
-      <button class="nav-item" onclick="showScreen('adhkar')" data-screen="adhkar" aria-label="الأذكار">
+      <button class="nav-item" data-action="showScreen" data-args=["'adhkar'"] data-screen="adhkar" aria-label="الأذكار">
         <span class="nav-icon" style="display: inline-flex; width: 24px; height: 24px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
         <span>الأذكار</span>
       </button>
-      <button class="nav-item" onclick="showScreen('settings')" data-screen="settings" aria-label="الإعدادات">
+      <button class="nav-item" data-action="showScreen" data-args=["'settings'"] data-screen="settings" aria-label="الإعدادات">
         <span class="nav-icon" style="display: inline-flex; width: 24px; height: 24px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
         <span>الإعدادات</span>
       </button>
