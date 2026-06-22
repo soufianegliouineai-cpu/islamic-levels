@@ -314,10 +314,28 @@ function loadState() {
   if (!('lastCompletionReward' in state)) state.lastCompletionReward = null;
   // Always roll over on load so persisted yesterday's tasks can't be re-credited.
   rolloverIfNewDay();
+  // Clamp any corrupted counters back to sane values.
+  clampCounters();
   checkDailyLogin();
   updateTheme();
 }
 function saveState() { localStorage.setItem('islamicLevels', JSON.stringify(state)); }
+
+// Sanitize persisted state — clamp counters to non-negative and prune bad history.
+// Called on load and after every state mutation that touches counters.
+function clampCounters() {
+  if (!state) return;
+  state.xp = Math.max(0, Number(state.xp) || 0);
+  state.gems = Math.max(0, Number(state.gems) || 0);
+  state.streak = Math.max(0, Number(state.streak) || 0);
+  state.longestStreak = Math.max(state.streak, Math.max(0, Number(state.longestStreak) || 0));
+  state.totalDays = Math.max(0, Number(state.totalDays) || 0);
+  state.totalPrayers = Math.max(0, Number(state.totalPrayers) || 0);
+  state.totalQuran = Math.max(0, Number(state.totalQuran) || 0);
+  state.totalDhikr = Math.max(0, Number(state.totalDhikr) || 0);
+  state.tasbihTotal = Math.max(0, Number(state.tasbihTotal) || 0);
+  if (!Array.isArray(state.dailyHistory)) state.dailyHistory = [];
+}
 
 // ==================== AUTH ====================
 function showLogin() { document.getElementById('loginForm').style.display = 'block'; document.getElementById('registerForm').style.display = 'none'; }
@@ -384,11 +402,16 @@ function saveUserData(userId) { localStorage.setItem('islamicLevels_' + userId, 
 function checkDailyLogin() { const today = getToday(); if (state.lastLoginDate === today) return; const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]; state.loginStreak = (state.lastLoginDate === yesterday) ? state.loginStreak + 1 : 1; state.lastLoginDate = today; state.totalLogins++; state.dailyRewardClaimed = false; saveState(); }
 
 function claimDailyReward() {
-  if (state.dailyRewardClaimed) { alert('✅ حصلت على مكافأتك اليومية بالفعل!'); return; }
+  rolloverIfNewDay();
+  if (state.dailyRewardClaimed) { showNotification('تم', 'حصلت على مكافأتك اليومية بالفعل!'); return; }
+  const today = getToday();
+  const rewardKey = 'il_daily_reward_' + today;
+  if (localStorage.getItem(rewardKey)) { showNotification('تم', 'حصلت على مكافأتك اليومية بالفعل!'); state.dailyRewardClaimed = true; saveState(); renderShop(); return; }
   const reward = Math.min(10 + (state.loginStreak * 2), 100);
   state.gems += reward; state.xp = (state.xp || 0) + 10; state.dailyRewardClaimed = true;
+  localStorage.setItem(rewardKey, String(Date.now()));
   vibrate([100, 50, 100]); saveState(); updateHeaderGems(); renderShop();
-  alert('🎉 مكافأة يومية: +' + reward + ' جوهرة | +10 XP');
+  showNotification('🎉', 'مكافأة يومية: +' + reward + ' جوهرة | +10 XP');
 }
 
 function claimRewardItem(itemId) {
@@ -418,7 +441,16 @@ function showScreen(name) {
 
 // ==================== HOME ====================
 function renderLevels() { document.getElementById('levelsContainer').innerHTML = LEVELS.map(level => { const unlock = checkLevelUnlock(state); const isLocked = level.id > state.level && !state.purchasedItems.includes('unlock_level_' + level.id); return '<div class="level-card" style="' + (isLocked ? 'opacity: 0.6;' : '') + '" onclick="' + (isLocked ? '' : 'selectLevel(' + level.id + ')') + '"><div class="level-gradient" style="background: linear-gradient(135deg, ' + level.color[0] + ', ' + level.color[1] + ');"><div class="level-emoji">' + level.icon + '</div><div class="level-name">' + level.title + '</div><div style="display: flex; justify-content: space-between; margin-top: 8px;"><span style="font-size: 12px; opacity: 0.9;">⏱️ ' + level.duration + '</span><span style="font-size: 12px; opacity: 0.9;">💎 ' + level.reward + ' | ⭐ ' + level.xp + ' XP</span></div>' + (isLocked ? '<div style="font-size: 12px; margin-top: 8px;">🔒 ' + (unlock.reason || 'مقفل') + '</div>' : '') + '</div></div>'; }).join(''); }
-function selectLevel(levelId) { state.level = levelId; state.todayTasks = []; saveState(); showScreen('tracker'); }
+function selectLevel(levelId) {
+  // Enforce level lock client-side (server-side would be authoritative)
+  const unlock = checkLevelUnlock(state);
+  const purchased = state.purchasedItems.includes('unlock_level_' + levelId);
+  if (levelId > state.level && !purchased && levelId > 1 && !unlock.canUnlock) {
+    showNotification('مقفل', unlock.reason || 'يجب إكمال المستوى السابق أولاً');
+    return;
+  }
+  state.level = levelId; state.todayTasks = []; saveState(); showScreen('tracker');
+}
 
 // ==================== DASHBOARD ====================
 function renderDashboard() {
@@ -564,7 +596,29 @@ function checkLevelUnlock(state) {
 
 // ==================== TASBIH ====================
 function renderTasbih() { document.getElementById('tasbihText').textContent = state.tasbihText; document.getElementById('tasbihCounter').textContent = state.tasbihCount; document.getElementById('tasbihTarget').textContent = state.tasbihTarget; document.getElementById('tasbihTotal').textContent = state.tasbihTotal; }
-function incrementTasbih() { state.tasbihCount++; state.tasbihTotal++; vibrate(state.vibrationEnabled ? 30 : 0); if (state.tasbihCount >= state.tasbihTarget) { state.gems += 5; state.xp = (state.xp || 0) + 5; state.tasbihCount = 0; vibrate([100, 50, 100]); updateHeaderGems(); } saveState(); document.getElementById('tasbihCounter').textContent = state.tasbihCount; document.getElementById('tasbihTotal').textContent = state.tasbihTotal; }
+function incrementTasbih() {
+  rolloverIfNewDay();
+  // Per-day reward cap: only 10 full rounds per day, regardless of clicks
+  const today = getToday();
+  const cyclesKey = 'tasbih_cycles_' + today;
+  let cycles = parseInt(localStorage.getItem(cyclesKey) || '0', 10);
+  if (cycles >= 10) {
+    showNotification('حد يومي', 'وصلت للحد الأقصى اليوم (10 دورات)');
+    return;
+  }
+  state.tasbihCount++; state.tasbihTotal++;
+  vibrate(state.vibrationEnabled ? 30 : 0);
+  if (state.tasbihCount >= state.tasbihTarget) {
+    state.gems += 5; state.xp = (state.xp || 0) + 5;
+    state.tasbihCount = 0;
+    cycles++;
+    localStorage.setItem(cyclesKey, String(cycles));
+    vibrate([100, 50, 100]); updateHeaderGems();
+  }
+  saveState();
+  document.getElementById('tasbihCounter').textContent = state.tasbihCount;
+  document.getElementById('tasbihTotal').textContent = state.tasbihTotal;
+}
 function resetTasbih() { state.tasbihCount = 0; saveState(); renderTasbih(); }
 function changeTasbihText(text) {
   const safe = sanitizeInput(prompt('نص التسبيح:', text || state.tasbihText) || '', 100);
@@ -998,12 +1052,45 @@ function showDuaCategory(key) { const cat = DUAS[key]; if (!cat) return; let htm
 
 // ==================== PRAYER TRACKER ====================
 function renderPrayerTracker() { document.getElementById('prayerDate').textContent = new Date().toLocaleDateString('ar', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); let html = ''; DAILY_WORSHIP.faraid.forEach(prayer => { const completed = state.todayPrayers[prayer.key] || false; const time = prayerService.times ? prayerService.times[prayer.key] : ''; html += '<div class="card" style="margin-bottom: 12px; border-color: ' + (completed ? 'var(--success)' : 'var(--border)') + ';"><div style="display: flex; align-items: center; gap: 12px;"><span style="font-size: 32px;">' + prayer.icon + '</span><div style="flex: 1;"><div style="font-weight: 800; font-size: 18px;">صلاة ' + prayer.name + '</div><div style="font-size: 13px; color: var(--text-muted);">' + (time ? '⏰ ' + time : '') + '</div></div><button class="btn ' + (completed ? 'btn-success' : 'btn-primary') + '" style="width: auto; padding: 12px 20px;" onclick="togglePrayer(\'' + prayer.key + '\')">' + (completed ? '✓' : 'أديت') + '</button></div></div>'; }); document.getElementById('prayerTrackerContainer').innerHTML = html; document.getElementById('prayersCompleted').textContent = Object.values(state.todayPrayers).filter(v => v).length; }
-function togglePrayer(key) { rolloverIfNewDay(); state.todayPrayers[key] = !state.todayPrayers[key]; if (state.todayPrayers[key]) state.totalPrayers++; else state.totalPrayers = Math.max(0, state.totalPrayers - 1); vibrate(50); saveState(); renderPrayerTracker(); updateHeaderGems(); }
+function togglePrayer(key) {
+  rolloverIfNewDay();
+  const today = getToday();
+  const todayKey = 'prayers_done_' + today;
+  let doneSet;
+  try { doneSet = new Set(JSON.parse(localStorage.getItem(todayKey) || '[]')); } catch (e) { doneSet = new Set(); }
+  const wasDone = !!state.todayPrayers[key];
+  const isDone = !wasDone;
+  state.todayPrayers[key] = isDone;
+  // Only count toward lifetime total the FIRST time a prayer is checked today.
+  // Unchecking today does NOT decrement totalPrayers (would under-count).
+  if (isDone && !doneSet.has(key)) {
+    state.totalPrayers++;
+    doneSet.add(key);
+    localStorage.setItem(todayKey, JSON.stringify(Array.from(doneSet)));
+  }
+  vibrate(50); saveState(); renderPrayerTracker(); updateHeaderGems();
+}
 
 // ==================== ADHKAR ====================
 function renderAdhkarCategories() { let html = '<div class="card" style="background: linear-gradient(135deg, #8B5CF6, #DB2777); color: white; margin-bottom: 16px; text-align: center;"><div style="font-size: 20px; font-weight: 900;">📿 الأذكار</div></div>'; Object.entries(ADHKAR).forEach(([key, cat]) => { html += '<div class="card" style="margin-bottom: 12px; cursor: pointer;" onclick="showAdhkar(\'' + key + '\')"><div style="display: flex; align-items: center; gap: 12px;"><span style="font-size: 32px;">' + cat.icon + '</span><div style="flex: 1;"><div style="font-weight: 800;">' + cat.title + '</div><div style="font-size: 12px; color: var(--text-muted);">' + cat.time + '</div></div><div style="font-weight: 900; color: var(--primary);">' + cat.items.length + '</div></div></div>'; }); document.getElementById('adhkarCategories').innerHTML = html; document.getElementById('adhkarItems').style.display = 'none'; }
 function showAdhkar(categoryKey) { const cat = ADHKAR[categoryKey]; if (!cat) return; let html = '<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;"><button onclick="renderAdhkarCategories()" style="background: none; border: none; font-size: 24px;">←</button><div style="font-weight: 800; font-size: 18px;">' + cat.icon + ' ' + cat.title + '</div></div>'; cat.items.forEach((item, index) => { const key = categoryKey + '_' + index; const completed = state.todayAdhkar[key] || 0; const remaining = Math.max(0, item.count - completed); const isComplete = remaining === 0; html += '<div class="card" style="margin-bottom: 12px; border-color: ' + (isComplete ? 'var(--success)' : 'var(--border)') + ';"><div style="font-size: 16px; line-height: 1.8; margin-bottom: 12px; text-align: right;">' + item.text + '</div><div style="display: flex; justify-content: space-between; align-items: center;"><div style="font-size: 13px; color: var(--text-muted);">💎 +' + item.reward + ' | العدد: ' + item.count + '</div><button class="btn ' + (isComplete ? 'btn-success' : 'btn-primary') + '" style="width: auto; padding: 10px 16px;" onclick="completeDhikr(\'' + key + '\', ' + item.reward + ', ' + item.count + ')">' + (isComplete ? '✓' : 'تسبيح (' + remaining + ')') + '</button></div></div>'; }); document.getElementById('adhkarCategories').innerHTML = ''; document.getElementById('adhkarItems').innerHTML = html; document.getElementById('adhkarItems').style.display = 'block'; }
-function completeDhikr(key, reward, totalCount) { rolloverIfNewDay(); if (!state.todayAdhkar[key]) state.todayAdhkar[key] = 0; if (state.todayAdhkar[key] < totalCount) { state.todayAdhkar[key]++; state.totalDhikr++; vibrate(30); if (state.todayAdhkar[key] >= totalCount) { state.gems += reward; state.xp = (state.xp || 0) + Math.floor(reward / 10); } saveState(); updateHeaderGems(); showAdhkar(key.split('_')[0]); } }
+function completeDhikr(key, reward, totalCount) {
+  rolloverIfNewDay();
+  if (!state.todayAdhkar[key]) state.todayAdhkar[key] = 0;
+  if (state.todayAdhkar[key] >= totalCount) {
+    // Already fully counted for this key today.
+    showNotification('مكتمل', 'تم إكمال هذا الذكر اليوم');
+    return;
+  }
+  state.todayAdhkar[key]++;
+  state.totalDhikr++;
+  vibrate(30);
+  if (state.todayAdhkar[key] >= totalCount) {
+    state.gems += reward;
+    state.xp = (state.xp || 0) + Math.floor(reward / 10);
+  }
+  saveState(); updateHeaderGems(); showAdhkar(key.split('_')[0]);
+}
 
 // ==================== QURAN ====================
 function renderQuran() { let html = '<div class="card" style="background: linear-gradient(135deg, #10B981, #059669); color: white; margin-bottom: 16px; text-align: center;"><div style="font-size: 20px; font-weight: 900;">📖 القرآن الكريم</div></div>'; QURAN_PARTS.forEach(part => { html += '<div class="card" style="margin-bottom: 12px;"><div style="font-weight: 800;">الجزء ' + part.id + ': ' + part.name + '</div><div style="font-size: 13px; color: var(--text-muted);">صفحات: ' + part.pages + ' | ' + part.surahs + '</div><button class="btn btn-primary" style="margin-top: 8px;" onclick="logQuran(' + part.id + ')">✓ قرأت</button></div>'; }); document.getElementById('quranPartsContainer').innerHTML = html; }
