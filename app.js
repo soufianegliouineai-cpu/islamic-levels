@@ -281,8 +281,8 @@ function loginRemainingMs(email) {
     return entry && entry.lockedUntil ? Math.max(0, entry.lockedUntil - Date.now()) : 0;
   } catch (e) { return 0; }
 }
-function getDefaultState() { return { level: 1, xp: 0, streak: 0, longestStreak: 0, gems: 0, totalDays: 0, lastDate: null, todayTasks: [], completedChallenges: [], achievements: [], darkMode: false, notifEnabled: false, soundEnabled: true, vibrationEnabled: true, referralCode: generateCode(), totalShared: 0, streakFreezes: 0, dailyHistory: [], goals: [], totalPrayers: 0, totalQuran: 0, totalDhikr: 0, lastSync: null, prayerTimesEnabled: true, prayerTimes: null, location: null, todayPrayers: {}, todayAdhkar: {}, tasbihCount: 0, tasbihTotal: 0, tasbihText: 'سبحان الله وبحمده', tasbihTarget: 33, dailyGoals: [], purchasedItems: [], equippedAvatar: null, equippedTheme: null, equippedBadge: null, doubleXPTimer: 0, shieldActive: false, lastLoginDate: null, loginStreak: 0, totalLogins: 0, dailyRewardClaimed: false, claimedDailyRewards: [], charityTotal: 0, familyId: null, familyRole: null, parentId: null, childId: null }; }
-function loadState() { const s = localStorage.getItem('islamicLevels'); if (s) state = { ...getDefaultState(), ...JSON.parse(s) }; if (!state.referralCode) state.referralCode = generateCode(); if (!state.dailyHistory) state.dailyHistory = []; if (!state.todayPrayers) state.todayPrayers = {}; if (!state.todayAdhkar) state.todayAdhkar = {}; if (!state.purchasedItems) state.purchasedItems = []; checkDailyLogin(); updateTheme(); }
+function getDefaultState() { return { level: 1, xp: 0, streak: 0, longestStreak: 0, gems: 0, totalDays: 0, lastDate: null, completionRewardedDate: null, lastCompletionReward: null, todayTasks: [], completedChallenges: [], achievements: [], darkMode: false, notifEnabled: false, soundEnabled: true, vibrationEnabled: true, referralCode: generateCode(), totalShared: 0, streakFreezes: 0, dailyHistory: [], goals: [], totalPrayers: 0, totalQuran: 0, totalDhikr: 0, lastSync: null, prayerTimesEnabled: true, prayerTimes: null, location: null, todayPrayers: {}, todayAdhkar: {}, tasbihCount: 0, tasbihTotal: 0, tasbihText: 'سبحان الله وبحمده', tasbihTarget: 33, dailyGoals: [], purchasedItems: [], equippedAvatar: null, equippedTheme: null, equippedBadge: null, doubleXPTimer: 0, shieldActive: false, lastLoginDate: null, loginStreak: 0, totalLogins: 0, dailyRewardClaimed: false, claimedDailyRewards: [], charityTotal: 0, familyId: null, familyRole: null, parentId: null, childId: null }; }
+function loadState() { const s = localStorage.getItem('islamicLevels'); if (s) state = { ...getDefaultState(), ...JSON.parse(s) }; if (!state.referralCode) state.referralCode = generateCode(); if (!state.dailyHistory) state.dailyHistory = []; if (!state.todayPrayers) state.todayPrayers = {}; if (!state.todayAdhkar) state.todayAdhkar = {}; if (!state.purchasedItems) state.purchasedItems = []; if (!('completionRewardedDate' in state)) state.completionRewardedDate = null; if (!('lastCompletionReward' in state)) state.lastCompletionReward = null; checkDailyLogin(); updateTheme(); }
 function saveState() { localStorage.setItem('islamicLevels', JSON.stringify(state)); }
 
 // ==================== AUTH ====================
@@ -477,16 +477,41 @@ function updateProgress() {
   const pct = Math.round((state.todayTasks.length / total) * 100);
   document.getElementById('progressPercent').textContent = pct + '%';
   document.getElementById('progressBar').style.width = pct + '%';
-  if (pct === 100) {
-    state.gems += level.reward; state.xp = (state.xp || 0) + (level.xp || 0);
+  const today = getToday();
+  const wasRewardedToday = state.completionRewardedDate === today;
+  if (pct === 100 && !wasRewardedToday) {
+    // Award completion rewards ONCE per calendar day
+    state.gems += level.reward;
+    state.xp = (state.xp || 0) + (level.xp || 0);
+    state.streak++;
+    state.totalDays++;
+    state.longestStreak = Math.max(state.longestStreak, state.streak);
+    state.lastDate = today;
+    // Record the reward details so we can roll back if the user unchecks a task
+    state.lastCompletionReward = { date: today, gems: level.reward, xp: level.xp || 0 };
+    state.completionRewardedDate = today;
+    // Append / replace today's history entry (idempotent)
+    state.dailyHistory = (state.dailyHistory || []).filter(h => h.date !== today);
+    state.dailyHistory.push({ date: today, completed: true, gems: level.reward });
+    if (state.dailyHistory.length > 30) state.dailyHistory = state.dailyHistory.slice(-30);
     document.getElementById('rewardBanner').style.display = 'block';
     document.getElementById('rewardGems').textContent = level.reward;
-    state.streak++; state.totalDays++;
-    state.longestStreak = Math.max(state.longestStreak, state.streak);
-    state.lastDate = getToday();
-    state.dailyHistory.push({ date: getToday(), completed: true, gems: level.reward });
-    if (state.dailyHistory.length > 30) state.dailyHistory = state.dailyHistory.slice(-30);
     saveState(); checkAchievements(); showConfetti(); updateHeaderGems();
+  } else if (pct < 100 && wasRewardedToday) {
+    // Roll back rewards awarded earlier today (user unchecked a task)
+    const reward = state.lastCompletionReward;
+    if (reward && reward.date === today) {
+      state.gems = Math.max(0, state.gems - reward.gems);
+      state.xp = Math.max(0, (state.xp || 0) - reward.xp);
+      state.streak = Math.max(0, state.streak - 1);
+      state.totalDays = Math.max(0, state.totalDays - 1);
+      // Remove today's entry from history; previous day still stays
+      state.dailyHistory = (state.dailyHistory || []).filter(h => h.date !== today);
+      state.lastCompletionReward = null;
+      state.completionRewardedDate = null;
+      document.getElementById('rewardBanner').style.display = 'none';
+      saveState(); updateHeaderGems();
+    }
   }
 }
 
@@ -1018,7 +1043,7 @@ function importData() {
           const data = JSON.parse(ev.target.result);
           if (typeof data !== 'object' || data === null || Array.isArray(data)) throw new Error('invalid');
           // Whitelist of safe top-level keys
-          const allowed = ['level','xp','streak','longestStreak','gems','totalDays','todayTasks','completedChallenges','achievements','darkMode','notifEnabled','soundEnabled','vibrationEnabled','referralCode','streakFreezes','dailyHistory','goals','totalPrayers','totalQuran','totalDhikr','prayerTimesEnabled','prayerTimes','location','todayPrayers','todayAdhkar','tasbihCount','tasbihTotal','tasbihText','tasbihTarget','purchasedItems','equippedAvatar','equippedTheme','equippedBadge','doubleXPTimer','shieldActive','lastLoginDate','loginStreak','totalLogins','dailyRewardClaimed','claimedDailyRewards','charityTotal','familyId','familyRole','parentId','childId'];
+          const allowed = ['level','xp','streak','longestStreak','gems','totalDays','completionRewardedDate','lastCompletionReward','lastDate','todayTasks','completedChallenges','achievements','darkMode','notifEnabled','soundEnabled','vibrationEnabled','referralCode','streakFreezes','dailyHistory','goals','totalPrayers','totalQuran','totalDhikr','prayerTimesEnabled','prayerTimes','location','todayPrayers','todayAdhkar','tasbihCount','tasbihTotal','tasbihText','tasbihTarget','purchasedItems','equippedAvatar','equippedTheme','equippedBadge','doubleXPTimer','shieldActive','lastLoginDate','loginStreak','totalLogins','dailyRewardClaimed','claimedDailyRewards','charityTotal','familyId','familyRole','parentId','childId'];
           const safe = {};
           for (const k of allowed) if (k in data) safe[k] = data[k];
           Object.assign(state, safe);
