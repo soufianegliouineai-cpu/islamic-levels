@@ -21,7 +21,9 @@ const ASSETS = [
   '/advanced-features.js',
   '/manifest.json',
   '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  '/icons/icon-512.png',
+  '/tests.html',
+  '/privacy.html'
 ];
 
 // Install

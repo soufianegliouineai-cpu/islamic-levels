@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tests - المستويات الإيمانية</title>
+  <link rel="stylesheet" href="premium-redesign.css">
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0F172A; color: #E2E8F0; padding: 24px; max-width: 900px; margin: 0 auto; line-height: 1.6; }
+    h1 { color: #A78BFA; }
+    h2 { color: #60A5FA; margin-top: 24px; }
+    .test { padding: 12px; margin: 8px 0; background: #1E293B; border-radius: 8px; font-family: monospace; }
+    .pass { color: #10B981; font-weight: 700; }
+    .fail { color: #EF4444; font-weight: 700; }
+    summary { cursor: pointer; padding: 8px; background: #334155; border-radius: 6px; margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <h1>اختبارات الأمان والجودة</h1>
+  <p>شغّل في console المتصفح للتحقق من أن الإصلاحات تعمل بشكل صحيح.</p>
+
+  <h2>اختبارات سريعة (افتح DevTools والصق في Console)</h2>
+
+  <details>
+    <summary>1. اختبار hashLocalPassword</summary>
+    <div class="test">
+      // Should produce a base64 SHA-256 hash, not the old 'h_' format<br>
+      const salt = generateLocalSalt();<br>
+      const hash = await secureHashLocalPassword('test123', salt);<br>
+      console.assert(!hash.startsWith('h_'), 'should not start with h_');<br>
+      console.assert(hash.length > 20, 'should be long base64');<br>
+      console.log('hash:', hash);
+    </div>
+  </details>
+
+  <details>
+    <summary>2. اختبار rolloverIfNewDay</summary>
+    <div class="test">
+      // Should clear todayTasks, todayPrayers, todayAdhkar when day changes<br>
+      state.todayTasks = [0, 1, 2];<br>
+      state.lastDate = '2020-01-01';<br>
+      rolloverIfNewDay();<br>
+      console.assert(state.todayTasks.length === 0, 'tasks cleared');<br>
+      console.assert(state.lastDate === getToday(), 'date updated');
+    </div>
+  </details>
+
+  <details>
+    <summary>3. اختبار clampCounters</summary>
+    <div class="test">
+      state.gems = -100;<br>
+      state.streak = -5;<br>
+      state.totalDays = -10;<br>
+      clampCounters();<br>
+      console.assert(state.gems === 0, 'gems clamped to 0');<br>
+      console.assert(state.streak === 0, 'streak clamped to 0');<br>
+      console.assert(state.totalDays === 0, 'totalDays clamped to 0');
+    </div>
+  </details>
+
+  <details>
+    <summary>4. اختبار escapeHtml</summary>
+    <div class="test">
+      console.assert(escapeHtml('<script>') === '&lt;script&gt;', 'angle brackets escaped');<br>
+      console.assert(escapeHtml('a"b') === 'a&quot;b', 'double quotes escaped');<br>
+      console.assert(escapeHtml(null) === '', 'null becomes empty');
+    </div>
+  </details>
+
+  <details>
+    <summary>5. اختبار updateProgress day-guard</summary>
+    <div class="test">
+      // Reset state, complete tasks, verify streak increments only once<br>
+      state.todayTasks = [];<br>
+      state.lastDate = getToday();<br>
+      state.streak = 0;<br>
+      state.totalDays = 0;<br>
+      state.completionRewardedDate = null;<br>
+      // Mark all level-1 tasks done<br>
+      const total = LEVELS[0].sections.reduce((s, sec) => s + sec.tasks.length, 0);<br>
+      for (let i = 0; i < total; i++) state.todayTasks.push(i);<br>
+      updateProgress();<br>
+      console.assert(state.streak === 1, 'streak = 1 after first completion');<br>
+      // Try again — should NOT increment<br>
+      updateProgress();<br>
+      console.assert(state.streak === 1, 'streak still 1 (no double-reward)');
+    </div>
+  </details>
+
+  <details>
+    <summary>6. اختبار selectLevel lock</summary>
+    <div class="test">
+      state.level = 1;<br>
+      state.totalDays = 5;<br>
+      // Try to select level 3 which requires 60 days<br>
+      selectLevel(3);<br>
+      console.assert(state.level === 1, 'level unchanged (lock works)');
+    </div>
+  </details>
+
+  <h2>فحص يدوي</h2>
+  <ul>
+    <li>افتح التطبيق، سجّل حساب، أكمل جميع المهام، أغلق التطبيق، افتحه اليوم التالي — يجب أن تكون المهام فارغة والمكافأة لم تُمنح مرتين.</li>
+    <li>افتح DevTools → Application → Local Storage → احذف islamicAuth — يجب أن تظهر نافذة تسجيل الدخول.</li>
+    <li>افتح DevTools → Console → اكتب `state.lastDate = '2020-01-01'; rolloverIfNewDay();` — يجب أن يتم مسح المهام.</li>
+  </ul>
+
+  <p style="margin-top:32px;color:#94A3B8;font-size:13px;">انتقل إلى <a href="/" style="color:#A78BFA;">التطبيق</a> · <a href="/privacy.html" style="color:#A78BFA;">سياسة الخصوصية</a></p>
+</body>
+</html>
