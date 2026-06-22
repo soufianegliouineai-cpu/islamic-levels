@@ -450,10 +450,23 @@ function showScreen(name) {
 function renderLevels() { document.getElementById('levelsContainer').innerHTML = LEVELS.map(level => { const unlock = checkLevelUnlock(state); const isLocked = level.id > state.level && !state.purchasedItems.includes('unlock_level_' + level.id); return '<div class="level-card" style="' + (isLocked ? 'opacity: 0.6;' : '') + '" onclick="' + (isLocked ? '' : 'selectLevel(' + level.id + ')') + '"><div class="level-gradient" style="background: linear-gradient(135deg, ' + level.color[0] + ', ' + level.color[1] + ');"><div class="level-emoji">' + level.icon + '</div><div class="level-name">' + level.title + '</div><div style="display: flex; justify-content: space-between; margin-top: 8px;"><span style="font-size: 12px; opacity: 0.9;">⏱️ ' + level.duration + '</span><span style="font-size: 12px; opacity: 0.9;">💎 ' + level.reward + ' | ⭐ ' + level.xp + ' XP</span></div>' + (isLocked ? '<div style="font-size: 12px; margin-top: 8px;">🔒 ' + (unlock.reason || 'مقفل') + '</div>' : '') + '</div></div>'; }).join(''); }
 function selectLevel(levelId) {
   // Enforce level lock client-side (server-side would be authoritative)
-  const unlock = checkLevelUnlock(state);
+  if (!Number.isInteger(levelId) || levelId < 1 || levelId > 5) return;
+  // Level 1 is always accessible
+  if (levelId === 1) {
+    state.level = 1; state.todayTasks = []; saveState(); showScreen('tracker'); return;
+  }
   const purchased = state.purchasedItems.includes('unlock_level_' + levelId);
-  if (levelId > state.level && !purchased && levelId > 1 && !unlock.canUnlock) {
-    showNotification('مقفل', unlock.reason || 'يجب إكمال المستوى السابق أولاً');
+  if (purchased) {
+    state.level = levelId; state.todayTasks = []; saveState(); showScreen('tracker'); return;
+  }
+  // Can only step down or to current level freely
+  if (levelId <= state.level) {
+    state.level = levelId; state.todayTasks = []; saveState(); showScreen('tracker'); return;
+  }
+  // For level N > 1, require totalDays >= LEVEL_REQUIREMENTS[N]
+  const required = (typeof LEVEL_REQUIREMENTS !== 'undefined' && LEVEL_REQUIREMENTS[levelId]) || 30 * levelId;
+  if (state.totalDays < required) {
+    showNotification('مقفل', 'تحتاج ' + (required - state.totalDays) + ' يوم إضافي لفتح المستوى ' + levelId);
     return;
   }
   state.level = levelId; state.todayTasks = []; saveState(); showScreen('tracker');
