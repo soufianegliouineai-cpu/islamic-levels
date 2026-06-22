@@ -423,13 +423,14 @@ function claimDailyReward() {
 function claimRewardItem(itemId) {
   const item = (SHOP_CATEGORIES.dailyRewards && SHOP_CATEGORIES.dailyRewards.items || []).find(i => i.id === itemId);
   if (!item) return;
-  if (state.loginStreak < item.day) { alert('🔒 المكافأة غير متاحة بعد. أكمل ' + item.day + ' أيام متتالية.'); return; }
+  if (typeof itemId !== 'string') return;
+  if (state.loginStreak < item.day) { showNotification('مقفل', 'المكافأة غير متاحة بعد. أكمل ' + item.day + ' أيام متتالية.'); return; }
   if (!state.claimedDailyRewards) state.claimedDailyRewards = [];
-  if (state.claimedDailyRewards.includes(item.id)) { alert('✅ تم ادعاء هذه المكافأة من قبل!'); return; }
+  if (state.claimedDailyRewards.includes(item.id)) { showNotification('تم', 'تم ادعاء هذه المكافأة من قبل!'); return; }
   state.gems += item.reward; state.xp = (state.xp || 0) + item.day;
   state.claimedDailyRewards.push(item.id);
   vibrate([100, 50, 100]); saveState(); updateHeaderGems(); renderShop();
-  alert('🎉 ' + item.name + ': +' + item.reward + ' جوهرة | +' + item.day + ' XP');
+  showNotification('🎉', escapeHtml(item.name) + ': +' + item.reward + ' جوهرة | +' + item.day + ' XP');
 }
 
 // ==================== NAVIGATION ====================
@@ -522,10 +523,13 @@ function renderTracker() {
 
 function toggleTask(taskId) {
   rolloverIfNewDay();
+  // Validate taskId against the current level's task list
+  const level = LEVELS.find(l => l.id === state.level);
+  const total = level.sections.reduce((sum, s) => sum + s.tasks.length, 0);
+  if (!Number.isInteger(taskId) || taskId < 0 || taskId >= total) return;
   const idx = state.todayTasks.indexOf(taskId);
   if (idx === -1) {
     state.todayTasks.push(taskId);
-    const level = LEVELS.find(l => l.id === state.level);
     let taskIdCounter = 0;
     for (const section of level.sections) {
       for (const task of section.tasks) {
@@ -734,8 +738,15 @@ function showShopCategory(cat) {
   document.getElementById('shopItemsContainer').innerHTML = html;
 }
 function buyItem(itemId, price, type, effect) {
-  if (price > 0 && state.gems < price) { alert('❌ جواهر غير كافية!'); return; }
-  if (state.purchasedItems.includes(itemId)) { alert('❌ تملك هذا بالفعل!'); return; }
+  // Validate itemId is a string
+  if (typeof itemId !== 'string' || itemId.length === 0 || itemId.length > 64) { showNotification('خطأ', 'عنصر غير صالح'); return; }
+  // Validate price is non-negative integer
+  if (!Number.isInteger(price) || price < 0 || price > 100000) { showNotification('خطأ', 'سعر غير صالح'); return; }
+  // Validate type
+  const validTypes = ['consumable','avatar','theme','badge','sound','charity','unlock','reward'];
+  if (typeof type !== 'string' || !validTypes.includes(type)) { showNotification('خطأ', 'نوع غير صالح'); return; }
+  if (price > 0 && state.gems < price) { showNotification('خطأ', 'جواهر غير كافية!'); return; }
+  if (state.purchasedItems.includes(itemId)) { showNotification('خطأ', 'تملك هذا بالفعل!'); return; }
   state.gems -= price; state.purchasedItems.push(itemId);
   if (type === 'consumable') {
     if (effect === 'freeze') state.streakFreezes++;
@@ -959,28 +970,29 @@ function renderGiftConversion() {
 }
 
 function convertGems() {
-  const amount = parseInt(document.getElementById('convertAmount').value);
-  if (!amount || amount < 100) { alert('الحد الأدنى 100 جوهرة'); return; }
-  if (amount > state.gems) { alert('جواهر غير كافية'); return; }
-  
+  const raw = document.getElementById('convertAmount').value;
+  const amount = parseInt(raw, 10);
+  if (!Number.isInteger(amount) || amount < 100 || amount > 1000000) { showNotification('خطأ', 'الحد الأدنى 100 جوهرة'); return; }
+  if (amount > state.gems) { showNotification('خطأ', 'جواهر غير كافية'); return; }
+
   const mad = convertGemsToMad(amount);
   state.gems -= amount;
   saveState(); renderGiftConversion(); updateHeaderGems();
-  alert('✅ تم التحويل!\n' + amount + ' 💎 = ' + mad + ' MAD');
+  showNotification('تم', '+' + amount + ' 💎 = ' + mad + ' MAD');
 }
 
 function requestMoneyGift() {
-  const amount = parseInt(document.getElementById('requestAmount')?.value);
-  if (!amount || amount < 100) { alert('الحد الأدنى 100 جوهرة'); return; }
-  if (amount > state.gems) { alert('جواهر غير كافية'); return; }
-  
+  const amount = parseInt(document.getElementById('requestAmount')?.value, 10);
+  if (!Number.isInteger(amount) || amount < 100 || amount > 1000000) { showNotification('خطأ', 'الحد الأدنى 100 جوهرة'); return; }
+  if (amount > state.gems) { showNotification('خطأ', 'جواهر غير كافية'); return; }
+
   const message = sanitizeInput(document.getElementById('requestMessage')?.value || '', 200);
-  
+
   if (familyManager) {
     familyManager.sendRequest(state.childId || 'child', 'money', amount, message);
-    alert('✅ تم إرسال الطلب للوالد!');
+    showNotification('تم', 'تم إرسال الطلب للوالد!');
   } else {
-    alert('❌ يجب الانضمام لعائلة أولاً');
+    showNotification('خطأ', 'يجب الانضمام لعائلة أولاً');
   }
 }
 
@@ -1063,6 +1075,9 @@ function showDuaCategory(key) { const cat = DUAS[key]; if (!cat) return; let htm
 function renderPrayerTracker() { document.getElementById('prayerDate').textContent = new Date().toLocaleDateString('ar', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); let html = ''; DAILY_WORSHIP.faraid.forEach(prayer => { const completed = state.todayPrayers[prayer.key] || false; const time = prayerService.times ? prayerService.times[prayer.key] : ''; html += '<div class="card" style="margin-bottom: 12px; border-color: ' + (completed ? 'var(--success)' : 'var(--border)') + ';"><div style="display: flex; align-items: center; gap: 12px;"><span style="font-size: 32px;">' + prayer.icon + '</span><div style="flex: 1;"><div style="font-weight: 800; font-size: 18px;">صلاة ' + prayer.name + '</div><div style="font-size: 13px; color: var(--text-muted);">' + (time ? '⏰ ' + time : '') + '</div></div><button class="btn ' + (completed ? 'btn-success' : 'btn-primary') + '" style="width: auto; padding: 12px 20px;" onclick="togglePrayer(\'' + prayer.key + '\')">' + (completed ? '✓' : 'أديت') + '</button></div></div>'; }); document.getElementById('prayerTrackerContainer').innerHTML = html; document.getElementById('prayersCompleted').textContent = Object.values(state.todayPrayers).filter(v => v).length; }
 function togglePrayer(key) {
   rolloverIfNewDay();
+  // Validate key against known prayer keys
+  const validKeys = ['fajr','dhuhr','asr','maghrib','isha','duha','witr'];
+  if (typeof key !== 'string' || !validKeys.includes(key)) return;
   const today = getToday();
   const todayKey = 'prayers_done_' + today;
   let doneSet;
@@ -1085,6 +1100,10 @@ function renderAdhkarCategories() { let html = '<div class="card" style="backgro
 function showAdhkar(categoryKey) { const cat = ADHKAR[categoryKey]; if (!cat) return; let html = '<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;"><button onclick="renderAdhkarCategories()" style="background: none; border: none; font-size: 24px;">←</button><div style="font-weight: 800; font-size: 18px;">' + cat.icon + ' ' + cat.title + '</div></div>'; cat.items.forEach((item, index) => { const key = categoryKey + '_' + index; const completed = state.todayAdhkar[key] || 0; const remaining = Math.max(0, item.count - completed); const isComplete = remaining === 0; html += '<div class="card" style="margin-bottom: 12px; border-color: ' + (isComplete ? 'var(--success)' : 'var(--border)') + ';"><div style="font-size: 16px; line-height: 1.8; margin-bottom: 12px; text-align: right;">' + item.text + '</div><div style="display: flex; justify-content: space-between; align-items: center;"><div style="font-size: 13px; color: var(--text-muted);">💎 +' + item.reward + ' | العدد: ' + item.count + '</div><button class="btn ' + (isComplete ? 'btn-success' : 'btn-primary') + '" style="width: auto; padding: 10px 16px;" onclick="completeDhikr(\'' + key + '\', ' + item.reward + ', ' + item.count + ')">' + (isComplete ? '✓' : 'تسبيح (' + remaining + ')') + '</button></div></div>'; }); document.getElementById('adhkarCategories').innerHTML = ''; document.getElementById('adhkarItems').innerHTML = html; document.getElementById('adhkarItems').style.display = 'block'; }
 function completeDhikr(key, reward, totalCount) {
   rolloverIfNewDay();
+  // Validate key against known adhkar keys (category + '_' + index)
+  if (typeof key !== 'string' || !/^[a-zA-Z]+_\d+$/.test(key)) return;
+  if (!Number.isInteger(reward) || reward < 0 || reward > 1000) return;
+  if (!Number.isInteger(totalCount) || totalCount < 1 || totalCount > 1000) return;
   if (!state.todayAdhkar[key]) state.todayAdhkar[key] = 0;
   if (state.todayAdhkar[key] >= totalCount) {
     // Already fully counted for this key today.
