@@ -282,7 +282,7 @@ function loginRemainingMs(email) {
     return entry && entry.lockedUntil ? Math.max(0, entry.lockedUntil - Date.now()) : 0;
   } catch (e) { return 0; }
 }
-function getDefaultState() { return { level: 1, xp: 0, streak: 0, longestStreak: 0, gems: 0, totalDays: 0, lastDate: null, completionRewardedDate: null, lastCompletionReward: null, dayFinalizedDate: null, todayTasks: [], todayTaskDetails: [], completedChallenges: [], achievements: [], darkMode: false, notifEnabled: false, soundEnabled: true, vibrationEnabled: true, referralCode: generateCode(), totalShared: 0, streakFreezes: 0, dailyHistory: [], goals: [], totalPrayers: 0, totalQuran: 0, totalDhikr: 0, lastSync: null, prayerTimesEnabled: true, prayerTimes: null, location: null, todayPrayers: {}, todayAdhkar: {}, tasbihCount: 0, tasbihTotal: 0, tasbihText: 'سبحان الله وبحمده', tasbihTarget: 33, dailyGoals: [], purchasedItems: [], equippedAvatar: null, equippedTheme: null, equippedBadge: null, doubleXPTimer: 0, shieldActive: false, lastLoginDate: null, loginStreak: 0, totalLogins: 0, dailyRewardClaimed: false, claimedDailyRewards: [], charityTotal: 0, familyId: null, familyRole: null, parentId: null, childId: null }; }
+function getDefaultState() { return { level: 1, xp: 0, streak: 0, longestStreak: 0, gems: 0, totalDays: 0, lastDate: null, completionRewardedDate: null, lastCompletionReward: null, dayFinalizedDate: null, todayTasks: [], todayTaskDetails: [], todayChallenges: {}, completedChallenges: [], achievements: [], darkMode: false, notifEnabled: false, soundEnabled: true, vibrationEnabled: true, referralCode: generateCode(), totalShared: 0, streakFreezes: 0, dailyHistory: [], goals: [], totalPrayers: 0, totalQuran: 0, totalDhikr: 0, lastSync: null, prayerTimesEnabled: true, prayerTimes: null, location: null, todayPrayers: {}, todayAdhkar: {}, tasbihCount: 0, tasbihTotal: 0, tasbihText: 'سبحان الله وبحمده', tasbihTarget: 33, dailyGoals: [], purchasedItems: [], equippedAvatar: null, equippedTheme: null, equippedBadge: null, doubleXPTimer: 0, shieldActive: false, lastLoginDate: null, loginStreak: 0, totalLogins: 0, dailyRewardClaimed: false, claimedDailyRewards: [], charityTotal: 0, familyId: null, familyRole: null, parentId: null, childId: null }; }
 
 // Roll over per-day state if the calendar day has changed.
 // Returns true if a roll-over actually happened.
@@ -292,6 +292,7 @@ function rolloverIfNewDay() {
     // New day: reset today's tasks/prayers/adhkar but keep yesterday's history entries.
     state.todayTasks = [];
     state.todayTaskDetails = [];
+    state.todayChallenges = {};
     state.todayPrayers = {};
     state.todayAdhkar = {};
     state.lastDate = today;
@@ -350,6 +351,7 @@ function loadState() {
   if (!state.todayAdhkar) state.todayAdhkar = {};
   if (!state.purchasedItems) state.purchasedItems = [];
   if (!state.todayTaskDetails) state.todayTaskDetails = [];
+  if (!state.todayChallenges) state.todayChallenges = {};
   if (!('completionRewardedDate' in state)) state.completionRewardedDate = null;
   if (!('lastCompletionReward' in state)) state.lastCompletionReward = null;
   if (!('dayFinalizedDate' in state)) state.dayFinalizedDate = null;
@@ -495,7 +497,7 @@ function showScreen(name) {
   const navItem = document.querySelector('[data-screen="' + name + '"]');
   if (navItem) navItem.classList.add('active');
   vibrate(30);
-  const renderers = { home: renderLevels, tracker: renderTracker, prayer: renderPrayerTracker, adhkar: renderAdhkarCategories, quran: renderQuran, profile: renderProfile, settings: renderSettings, tasbih: renderTasbih, shop: renderShop, dua: renderDuaBook, family: renderFamily, gift: renderGiftConversion, messages: renderMessages, analytics: renderAnalytics, seasonal: renderSeasonal, community: renderCommunity, qibla: renderQibla, dashboard: renderDashboard };
+  const renderers = { home: renderLevels, tracker: renderTracker, prayer: renderPrayerTracker, adhkar: renderAdhkarCategories, quran: renderQuran, hadith: renderHadith, profile: renderProfile, settings: renderSettings, tasbih: renderTasbih, shop: renderShop, dua: renderDuaBook, family: renderFamily, gift: renderGiftConversion, messages: renderMessages, analytics: renderAnalytics, seasonal: renderSeasonal, community: renderCommunity, qibla: renderQibla, dashboard: renderDashboard };
   if (renderers[name]) renderers[name]();
 }
 
@@ -565,6 +567,211 @@ function renderDashboard() {
 }
 
 // ==================== TRACKER ====================
+// Generate today's concrete challenges based on level + day-of-week seed.
+// Each challenge has a measurable target. The user must reach the target to
+// get credit for the day. No more "just check and go".
+function getDailyChallenges(level) {
+  // Base challenges shared by every level
+  const challenges = [
+    {
+      id: 'quran_read',
+      icon: '📖',
+      title: 'قراءة القرآن',
+      target: level.id >= 3 ? 5 : 1, // pages
+      unit: 'صفحة',
+      xp: level.id >= 3 ? 30 : 15,
+      prompt: 'كم صفحة قرأت من القرآن؟',
+      placeholder: 'مثال: 5-7'
+    },
+    {
+      id: 'quran_memorize',
+      icon: '🧠',
+      title: 'حفظ قرآن',
+      target: level.id >= 2 ? 3 : 1, // verses
+      unit: 'آية',
+      xp: 20,
+      prompt: 'كم آية حفظت؟ اكتبها أو أذكر اسمها',
+      placeholder: 'مثال: آخر 5 آيات من سورة البقرة'
+    },
+    {
+      id: 'hadith_read',
+      icon: '📚',
+      title: 'قراءة حديث',
+      target: 1,
+      unit: 'حديث',
+      xp: 15,
+      prompt: 'ما الحديث الذي قرأته؟',
+      placeholder: 'مثال: حديث النية عن عمر بن الخطاب'
+    },
+    {
+      id: 'tafseer_study',
+      icon: '🔍',
+      title: 'تدبر وتفسير',
+      target: 1,
+      unit: 'مرجع',
+      xp: 20,
+      prompt: 'ما الذي تدبرت فيه؟',
+      placeholder: 'مثال: تفسير آية الكرسي - ابن كثير'
+    },
+    {
+      id: 'fajr_prayed',
+      icon: '🌅',
+      title: 'صلاة الفجر',
+      target: 1,
+      unit: 'صلاة',
+      xp: 15,
+      prompt: 'في أي وقت صليت؟',
+      placeholder: 'مثال: 5:30 صباحاً'
+    },
+    {
+      id: 'dhuhr_prayed',
+      icon: '☀️',
+      title: 'صلاة الظهر',
+      target: 1,
+      unit: 'صلاة',
+      xp: 15,
+      prompt: 'في أي وقت صليت؟',
+      placeholder: 'مثال: 12:45'
+    },
+    {
+      id: 'asr_prayed',
+      icon: '🌤️',
+      title: 'صلاة العصر',
+      target: 1,
+      unit: 'صلاة',
+      xp: 15,
+      prompt: 'في أي وقت صليت؟',
+      placeholder: 'مثال: 4:15'
+    },
+    {
+      id: 'maghrib_prayed',
+      icon: '🌅',
+      title: 'صلاة المغرب',
+      target: 1,
+      unit: 'صلاة',
+      xp: 15,
+      prompt: 'في أي وقت صليت؟',
+      placeholder: 'مثال: 6:45'
+    },
+    {
+      id: 'isha_prayed',
+      icon: '🌙',
+      title: 'صلاة العشاء',
+      target: 1,
+      unit: 'صلاة',
+      xp: 15,
+      prompt: 'في أي وقت صليت؟',
+      placeholder: 'مثال: 8:00'
+    },
+    {
+      id: 'morning_adhkar',
+      icon: '☀️',
+      title: 'أذكار الصباح',
+      target: 1,
+      unit: 'ورد',
+      xp: 15,
+      prompt: 'ما أذكار الصباح التي قرأتها؟',
+      placeholder: 'مثال: أذكار الصباح كاملة'
+    },
+    {
+      id: 'evening_adhkar',
+      icon: '🌙',
+      title: 'أذكار المساء',
+      target: 1,
+      unit: 'ورد',
+      xp: 15,
+      prompt: 'ما أذكار المساء التي قرأتها؟',
+      placeholder: 'مثال: أذكار المساء كاملة'
+    },
+    {
+      id: 'tasbih',
+      icon: '📿',
+      title: 'تسبيح',
+      target: 33,
+      unit: 'تسبيحة',
+      xp: 10,
+      prompt: 'كم تسبيحة قلت؟',
+      placeholder: 'مثال: سبحان الله وبحمده'
+    },
+    {
+      id: 'salawat',
+      icon: '☪️',
+      title: 'الصلاة على النبي',
+      target: 100,
+      unit: 'مرة',
+      xp: 15,
+      prompt: 'كم مرة صليت على النبي ﷺ؟',
+      placeholder: 'مثال: 100 مرة'
+    },
+    {
+      id: 'istighfar',
+      icon: '🤲',
+      title: 'الاستغفار',
+      target: 100,
+      unit: 'مرة',
+      xp: 15,
+      prompt: 'كم مرة استغفرت؟',
+      placeholder: 'مثال: أستغفر الله العظيم'
+    },
+    {
+      id: 'dua_personal',
+      icon: '🤲',
+      title: 'دعاء شخصي',
+      target: 1,
+      unit: 'دعاء',
+      xp: 10,
+      prompt: 'ما الذي دعوت الله به؟',
+      placeholder: 'مثال: اللهم إني أسألك الهدى'
+    },
+    {
+      id: 'quran_listen',
+      icon: '🎧',
+      title: 'استماع القرآن',
+      target: 5,
+      unit: 'صفحة',
+      xp: 10,
+      prompt: 'كم صفحة استمعت؟',
+      placeholder: 'مثال: سورة البقرة للشيخ عبد الباسط'
+    },
+    {
+      id: 'sadaqah',
+      icon: '💝',
+      title: 'صدقة',
+      target: 1,
+      unit: 'صدقة',
+      xp: 20,
+      prompt: 'ما الذي تصدقت به؟',
+      placeholder: 'مثال: 10 MAD لفقير'
+    },
+    {
+      id: 'dua_parents',
+      icon: '❤️',
+      title: 'الدعاء للوالدين',
+      target: 1,
+      unit: 'دعاء',
+      xp: 10,
+      prompt: 'هل دعوت لوالديك اليوم؟',
+      placeholder: 'مثال: رب ارحمهما كما ربياني صغيراً'
+    }
+  ];
+  // Required challenges per level (must all be met to count the day)
+  const required = {
+    1: ['fajr_prayed', 'dhuhr_prayed', 'asr_prayed', 'maghrib_prayed', 'isha_prayed', 'quran_read', 'morning_adhkar', 'evening_adhkar'],
+    2: ['fajr_prayed', 'dhuhr_prayed', 'asr_prayed', 'maghrib_prayed', 'isha_prayed', 'quran_read', 'quran_memorize', 'hadith_read', 'morning_adhkar', 'evening_adhkar', 'tasbih', 'salawat'],
+    3: ['fajr_prayed', 'dhuhr_prayed', 'asr_prayed', 'maghrib_prayed', 'isha_prayed', 'quran_read', 'quran_memorize', 'hadith_read', 'tafseer_study', 'morning_adhkar', 'evening_adhkar', 'tasbih', 'salawat', 'istighfar', 'quran_listen'],
+    4: ['fajr_prayed', 'dhuhr_prayed', 'asr_prayed', 'maghrib_prayed', 'isha_prayed', 'quran_read', 'quran_memorize', 'hadith_read', 'tafseer_study', 'morning_adhkar', 'evening_adhkar', 'tasbih', 'salawat', 'istighfar', 'quran_listen', 'dua_personal', 'sadaqah'],
+    5: ['fajr_prayed', 'dhuhr_prayed', 'asr_prayed', 'maghrib_prayed', 'isha_prayed', 'quran_read', 'quran_memorize', 'hadith_read', 'tafseer_study', 'morning_adhkar', 'evening_adhkar', 'tasbih', 'salawat', 'istighfar', 'quran_listen', 'dua_personal', 'sadaqah', 'dua_parents']
+  };
+  const reqIds = required[level.id] || required[1];
+  const list = challenges.filter(c => reqIds.indexOf(c.id) !== -1);
+  // Add 2 optional challenges for variety
+  const optional = challenges.filter(c => reqIds.indexOf(c.id) === -1);
+  for (let i = 0; i < 2 && i < optional.length; i++) {
+    list.push(optional[i]);
+  }
+  return list;
+}
+
 function renderTracker() {
   const level = LEVELS.find(l => l.id === state.level);
   const today = getToday();
@@ -584,197 +791,188 @@ function renderTracker() {
     html += '</div>';
   }
 
-  html += '<div class="card"><div style="display: flex; justify-content: space-between; margin-bottom: 12px;"><span style="font-weight: 800;">التقدم اليومي</span><span style="color: var(--primary); font-weight: 900;" id="progressPercent">0%</span></div><div class="progress-container"><div class="progress-bar" id="progressBar" style="width: 0%"></div></div><div style="display: flex; justify-content: space-between; margin-top: 12px;"><span style="font-size: 13px; color: var(--text-muted);">🔥 السلسلة: <span id="streakCount">' + state.streak + '</span></span><span style="font-size: 13px; color: var(--text-muted);" id="todayDate">' + today + '</span></div></div>';
+  html += '<div class="card"><div style="display: flex; justify-content: space-between; margin-bottom: 12px;"><span style="font-weight: 800;">التحديات اليومية</span><span style="color: var(--primary); font-weight: 900;" id="progressPercent">0%</span></div><div class="progress-container"><div class="progress-bar" id="progressBar" style="width: 0%"></div></div><div style="display: flex; justify-content: space-between; margin-top: 12px;"><span style="font-size: 13px; color: var(--text-muted);">🔥 السلسلة: <span id="streakCount">' + state.streak + '</span></span><span style="font-size: 13px; color: var(--text-muted);" id="todayDate">' + today + '</span></div></div>';
   html += '<div class="card" style="display: none;" id="rewardBanner"></div>';
 
-  // Ensure taskDetails exists
-  if (!Array.isArray(state.todayTaskDetails)) state.todayTaskDetails = [];
+  // Today's challenges
+  const challenges = getDailyChallenges(level);
+  if (!Array.isArray(state.todayChallenges)) state.todayChallenges = {};
+  const summaryLines = [];
+  let totalCompleted = 0;
+  let totalXP = 0;
 
-  let taskId = 0;
-  level.sections.forEach(section => {
-    html += '<div class="task-section"><div class="task-section-title">' + section.title + '</div>';
-    section.tasks.forEach(task => {
-      const taskText = typeof task === 'string' ? task : task.text;
-      const taskXP = typeof task === 'string' ? 10 : (task.xp || 10);
-      const done = state.todayTasks.includes(taskId);
-      const savedDetails = state.todayTaskDetails[taskId] || '';
-      // Build the task card with a details input + checkbox
-      html += '<div class="task-item ' + (done ? 'completed' : '') + '" data-task-id="' + taskId + '">';
-      html += '<div style="display: flex; align-items: center; gap: 12px;">';
-      html += '<div class="task-checkbox" data-action="toggleTask" data-args="[' + taskId + ']" style="cursor: pointer; min-width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 900; color: var(--primary); background: ' + (done ? 'var(--primary)' : 'transparent') + ';">' + (done ? '✓' : '') + '</div>';
-      html += '<div style="flex: 1;"><div class="task-text" style="font-weight: 600; color: ' + (done ? 'var(--primary)' : 'var(--text)') + ';">' + escapeHtml(taskText) + '</div>';
-      // Details input — what the user actually did
-      html += '<input type="text" class="task-detail-input" data-task-id="' + taskId + '" placeholder="ماذا فعلت؟ (صفحة / آية / عدد)" value="' + escapeAttr(savedDetails) + '" maxlength="100" style="margin-top: 6px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; width: 100%; background: var(--bg); color: var(--text); text-align: right;" />';
-      html += '</div>';
-      html += '<div style="font-size: 11px; color: var(--primary); font-weight: 700; white-space: nowrap;">+' + taskXP + ' XP</div>';
-      html += '</div>';
-      html += '</div>';
-      taskId++;
-    });
+  html += '<div style="font-weight: 800; margin-bottom: 8px;">🎯 تحديات اليوم (' + challenges.length + ')</div>';
+  challenges.forEach(function(ch) {
+    const entry = state.todayChallenges[ch.id] || { progress: 0, notes: '' };
+    const progress = Math.min(entry.progress || 0, ch.target);
+    const pct = Math.round((progress / ch.target) * 100);
+    const done = progress >= ch.target;
+    if (done) totalCompleted++;
+    totalXP += Math.round((progress / ch.target) * ch.xp);
+    summaryLines.push({ icon: ch.icon, title: ch.title, value: entry.notes || (progress + '/' + ch.target) });
+    html += '<div class="card" style="margin-bottom: 10px; padding: 14px; border-color: ' + (done ? 'var(--success)' : 'var(--border)') + '; ' + (done ? 'background: linear-gradient(135deg, #ECFDF5, #F0FDF4);' : '') + '">';
+    html += '<div style="display: flex; align-items: flex-start; gap: 12px;">';
+    html += '<div style="width: 40px; height: 40px; border-radius: 12px; background: ' + (done ? 'var(--success)' : 'var(--primary)') + '; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">' + (done ? '✓' : ch.icon) + '</div>';
+    html += '<div style="flex: 1; min-width: 0;">';
+    html += '<div style="font-weight: 700; margin-bottom: 4px;">' + escapeHtml(ch.title) + '</div>';
+    html += '<div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">' + escapeHtml(ch.prompt) + '</div>';
+    html += '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">';
+    html += '<div style="flex: 1;"><div class="progress-container" style="height: 8px;"><div class="progress-bar" style="width: ' + pct + '%; background: ' + (done ? 'var(--success)' : 'var(--primary)') + ';"></div></div></div>';
+    html += '<div style="font-size: 13px; font-weight: 700; color: ' + (done ? 'var(--success)' : 'var(--primary)') + ';">' + progress + '/' + ch.target + ' ' + escapeHtml(ch.unit) + '</div>';
     html += '</div>';
+    html += '<div style="display: flex; gap: 6px; margin-bottom: 8px;">';
+    html += '<button data-action="incChallenge" data-args="[\'' + ch.id + '\']" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); font-weight: 700; cursor: pointer;">+1</button>';
+    html += '<button data-action="incChallengeBy" data-args="[\'' + ch.id + '\',\'5\']" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); font-weight: 700; cursor: pointer;">+5</button>';
+    html += '<button data-action="setChallengeTarget" data-args="[\'' + ch.id + '\']" style="flex: 1; padding: 8px; border: 1px solid var(--primary); border-radius: 8px; background: var(--primary); color: white; font-weight: 700; cursor: pointer;">إنجاز</button>';
+    html += '<button data-action="addChallengeNote" data-args="[\'' + ch.id + '\']" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); font-weight: 700; cursor: pointer;">📝 تفاصيل</button>';
+    html += '</div>';
+    if (entry.notes) {
+      html += '<div style="font-size: 12px; color: var(--text); background: var(--bg); padding: 6px 10px; border-radius: 8px; border-right: 3px solid var(--primary);">📝 ' + escapeHtml(entry.notes) + '</div>';
+    }
+    html += '</div></div></div>';
   });
-  html += '<div id="trackerSummary" style="margin-top: 16px; padding: 12px; background: var(--bg); border-radius: 12px; font-size: 13px;"></div>';
+
+  html += '<div id="trackerSummary" style="margin-top: 16px;"></div>';
   document.getElementById('tasksContainer').innerHTML = html;
 
-  // Wire up input listeners to save details as user types
-  document.querySelectorAll('.task-detail-input').forEach(function(input) {
-    var tid = parseInt(input.getAttribute('data-task-id'), 10);
-    if (isNaN(tid)) return;
-    input.addEventListener('input', function() {
-      if (!Array.isArray(state.todayTaskDetails)) state.todayTaskDetails = [];
-      state.todayTaskDetails[tid] = sanitizeInput(input.value, 100);
-      saveState();
+  // Build summary panel
+  let sumHtml = '<div style="padding: 12px; background: var(--bg); border-radius: 12px;">';
+  sumHtml += '<div style="font-weight: 800; margin-bottom: 8px;">📋 ملخص اليوم</div>';
+  if (totalCompleted === 0) {
+    sumHtml += '<div style="color: var(--text-muted); font-size: 13px;">لم تكمل أي تحدي بعد. ابدأ بتسجيل ما فعلته!</div>';
+  } else {
+    summaryLines.forEach(function(line) {
+      sumHtml += '<div style="padding: 4px 0; font-size: 13px;">' + line.icon + ' <strong>' + escapeHtml(line.title) + '</strong> — ' + escapeHtml(line.value) + '</div>';
     });
-  });
+    sumHtml += '<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 13px; font-weight: 700;">💎 XP المكتسب اليوم: +' + totalXP + '</div>';
+  }
+  sumHtml += '</div>';
+  const sumEl = document.getElementById('trackerSummary');
+  if (sumEl) sumEl.innerHTML = sumHtml;
 
   updateProgress();
 }
 
-function toggleTask(taskId) {
+// Increment a challenge's progress by N (default 1)
+function incChallenge(challengeId, by) {
   rolloverIfNewDay();
-  // Validate taskId against the current level's task list
   const level = LEVELS.find(l => l.id === state.level);
-  const total = level.sections.reduce((sum, s) => sum + s.tasks.length, 0);
-  if (!Number.isInteger(taskId) || taskId < 0 || taskId >= total) return;
-  const idx = state.todayTasks.indexOf(taskId);
-  if (idx === -1) {
-    // Marking complete — ask the user to confirm what they did
-    const detailsInput = document.querySelector('.task-detail-input[data-task-id="' + taskId + '"]');
-    const details = detailsInput ? detailsInput.value.trim() : '';
-    if (!details) {
-      const taskObj = (function() {
-        let counter = 0;
-        for (const section of level.sections) {
-          for (const task of section.tasks) {
-            if (counter === taskId) return task;
-            counter++;
-          }
-        }
-        return null;
-      })();
-      const taskText = taskObj ? (typeof taskObj === 'string' ? taskObj : taskObj.text) : '';
-      const ask = prompt('ما الذي قمت به؟\nمثال: "صفحة 5-7" أو "آية الكرسي"\n\nالمهمة: ' + taskText, '');
-      if (ask === null) return; // cancelled
-      const sanitized = sanitizeInput(ask, 100);
-      if (!sanitized) {
-        showNotification('تفاصيل مطلوبة', 'يجب كتابة ما قمت به لتسجيل المهمة');
-        return;
-      }
-      if (detailsInput) detailsInput.value = sanitized;
-      if (!Array.isArray(state.todayTaskDetails)) state.todayTaskDetails = [];
-      state.todayTaskDetails[taskId] = sanitized;
-    }
-    state.todayTasks.push(taskId);
-    let taskIdCounter = 0;
-    for (const section of level.sections) {
-      for (const task of section.tasks) {
-        if (taskIdCounter === taskId) {
-          let taskXP = typeof task === 'string' ? 10 : (task.xp || 10);
-          if (state.doubleXPTimer > Date.now()) taskXP *= 2;
-          state.xp = (state.xp || 0) + taskXP;
-          break;
-        }
-        taskIdCounter++;
-      }
-      if (taskIdCounter > taskId) break;
-    }
-    vibrate(50);
-  } else {
-    state.todayTasks.splice(idx, 1);
-    // Keep the details so the user doesn't have to re-type on re-check
+  const challenges = getDailyChallenges(level);
+  const ch = challenges.find(c => c.id === challengeId);
+  if (!ch) return;
+  by = by || 1;
+  if (!state.todayChallenges[challengeId]) state.todayChallenges[challengeId] = { progress: 0, notes: '' };
+  const entry = state.todayChallenges[challengeId];
+  entry.progress = Math.min(ch.target, (entry.progress || 0) + by);
+  // Award XP proportional
+  const xpGain = Math.round((by / ch.target) * ch.xp);
+  state.xp = (state.xp || 0) + xpGain;
+  if (entry.progress >= ch.target) {
+    state.gems += Math.round(ch.xp / 5);
   }
+  saveState(); updateHeaderGems(); vibrate(50);
+  renderTracker();
+}
+
+// Mark a challenge as fully done (asks for confirmation note)
+function setChallengeTarget(challengeId) {
+  rolloverIfNewDay();
+  const level = LEVELS.find(l => l.id === state.level);
+  const challenges = getDailyChallenges(level);
+  const ch = challenges.find(c => c.id === challengeId);
+  if (!ch) return;
+  const note = prompt('أكملت "' + ch.title + '"؟ أخبرنا بالتفاصيل:\nمثال: ' + ch.placeholder, '');
+  if (note === null) return;
+  const sanitized = sanitizeInput(note, 200);
+  if (!sanitized) {
+    showNotification('تفاصيل مطلوبة', 'يجب كتابة ما فعلتِه لتسجيل الإنجاز');
+    return;
+  }
+  if (!state.todayChallenges[challengeId]) state.todayChallenges[challengeId] = { progress: 0, notes: '' };
+  const entry = state.todayChallenges[challengeId];
+  const before = entry.progress || 0;
+  entry.progress = ch.target;
+  entry.notes = sanitized;
+  // Award XP for the remaining progress (if any)
+  const diff = ch.target - before;
+  if (diff > 0) {
+    const xpGain = Math.round((diff / ch.target) * ch.xp);
+    state.xp = (state.xp || 0) + xpGain;
+    state.gems += Math.round(ch.xp / 5);
+  }
+  saveState(); updateHeaderGems(); vibrate([100, 50, 100]);
+  renderTracker();
+}
+
+// Add or update the user's note for a challenge (no progress change)
+function addChallengeNote(challengeId) {
+  const level = LEVELS.find(l => l.id === state.level);
+  const challenges = getDailyChallenges(level);
+  const ch = challenges.find(c => c.id === challengeId);
+  if (!ch) return;
+  const current = (state.todayChallenges[challengeId] && state.todayChallenges[challengeId].notes) || '';
+  const note = prompt('تفاصيل "' + ch.title + '":', current);
+  if (note === null) return;
+  const sanitized = sanitizeInput(note, 200);
+  if (!state.todayChallenges[challengeId]) state.todayChallenges[challengeId] = { progress: 0, notes: '' };
+  state.todayChallenges[challengeId].notes = sanitized;
   saveState();
-  renderTracker(); updateHeaderGems(); playSound();
+  renderTracker();
 }
 
 function updateProgress() {
   const level = LEVELS.find(l => l.id === state.level);
-  const total = level.sections.reduce((sum, s) => sum + s.tasks.length, 0);
-  // Sanitize: strip any task IDs that aren't valid for the current level
-  // (defends against manually injected IDs in localStorage)
-  state.todayTasks = (state.todayTasks || []).filter(id => Number.isInteger(id) && id >= 0 && id < total);
-  const pct = Math.round((state.todayTasks.length / total) * 100);
-  document.getElementById('progressPercent').textContent = pct + '%';
-  document.getElementById('progressBar').style.width = pct + '%';
+  const challenges = getDailyChallenges(level);
+  const total = challenges.length;
+  let completed = 0;
+  challenges.forEach(function(ch) {
+    const entry = state.todayChallenges[ch.id];
+    if (entry && (entry.progress || 0) >= ch.target) completed++;
+  });
+  const pct = total ? Math.round((completed / total) * 100) : 0;
+  const progressPercentEl = document.getElementById('progressPercent');
+  const progressBarEl = document.getElementById('progressBar');
+  if (progressPercentEl) progressPercentEl.textContent = pct + '%';
+  if (progressBarEl) progressBarEl.style.width = pct + '%';
   const today = getToday();
   const wasRewardedToday = state.completionRewardedDate === today;
-  // Once a day has been either rewarded or rolled-back, it is "finalized":
-  // no further credit is possible until the calendar day actually changes.
-  // Without this guard a user could check -> uncheck -> check repeatedly
-  // within the same day to inflate streak/totalDays.
   const dayFinalized = state.dayFinalizedDate === today;
+  // The day counts only when ALL challenges meet their targets
   if (pct === 100 && !wasRewardedToday && !dayFinalized) {
-    // Award completion rewards ONCE per calendar day
     state.gems += level.reward;
     state.xp = (state.xp || 0) + (level.xp || 0);
     state.streak++;
     state.totalDays++;
     state.longestStreak = Math.max(state.longestStreak, state.streak);
     state.lastDate = today;
-    // Record the reward details so we can roll back if the user unchecks a task
     state.lastCompletionReward = { date: today, gems: level.reward, xp: level.xp || 0 };
     state.completionRewardedDate = today;
     state.dayFinalizedDate = today;
-    // Append / replace today's history entry (idempotent)
     state.dailyHistory = (state.dailyHistory || []).filter(h => h.date !== today);
     state.dailyHistory.push({ date: today, completed: true, gems: level.reward });
     if (state.dailyHistory.length > 30) state.dailyHistory = state.dailyHistory.slice(-30);
     saveState(); checkAchievements(); showConfetti(); showCompletionCongrats(level); updateHeaderGems();
   } else if (pct < 100 && wasRewardedToday) {
-    // Roll back rewards awarded earlier today (user unchecked a task).
-    // Note: even after rollback, dayFinalizedDate stays set so the user cannot
-    // re-claim by checking again. Re-credit only happens after a real day change.
     const reward = state.lastCompletionReward;
     if (reward && reward.date === today) {
       state.gems = Math.max(0, state.gems - reward.gems);
       state.xp = Math.max(0, (state.xp || 0) - reward.xp);
       state.streak = Math.max(0, state.streak - 1);
       state.totalDays = Math.max(0, state.totalDays - 1);
-      // Remove today's entry from history; previous day still stays
       state.dailyHistory = (state.dailyHistory || []).filter(h => h.date !== today);
       state.lastCompletionReward = null;
       state.completionRewardedDate = null;
-      // Keep dayFinalizedDate set so re-claiming is blocked until tomorrow.
       hideCompletionCongrats();
       saveState(); updateHeaderGems();
     }
   } else if (pct === 100 && wasRewardedToday) {
-    // Already completed today — show the persistent "all done" notice
     showCompletionCongrats(level, /*persistOnly=*/ true);
   }
-  // Update the concrete summary panel with what the user actually did
-  renderTrackerSummary(level);
+  // No need to call renderTrackerSummary here — renderTracker built the summary inline
 }
 
-// Render a concrete "what you did today" summary at the bottom of the tracker
-// so the user can see exactly which pages / verses / counts they recorded.
-function renderTrackerSummary(level) {
-  const el = document.getElementById('trackerSummary');
-  if (!el) return;
-  let html = '<div style="font-weight: 800; margin-bottom: 8px;">📋 ملخص اليوم</div>';
-  let hasContent = false;
-  let counter = 0;
-  level.sections.forEach(section => {
-    section.tasks.forEach(task => {
-      const tid = counter;
-      const isDone = state.todayTasks.includes(tid);
-      const details = state.todayTaskDetails && state.todayTaskDetails[tid];
-      if (isDone && details) {
-        const taskText = typeof task === 'string' ? task : task.text;
-        html += '<div style="padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px;">';
-        html += '<span style="color: var(--primary);">✓</span> <strong>' + escapeHtml(taskText) + '</strong>';
-        html += '<div style="color: var(--text-muted); margin-right: 20px; margin-top: 2px;">↳ ' + escapeHtml(details) + '</div>';
-        html += '</div>';
-        hasContent = true;
-      }
-      counter++;
-    });
-  });
-  if (!hasContent) {
-    html += '<div style="color: var(--text-muted); font-size: 13px;">لم تسجل أي مهمة بعد. اضغط على المهمة وأخبرنا ماذا فعلت.</div>';
-  }
-  el.innerHTML = html;
-}
+// The renderTracker function builds the daily summary panel inline now.
+function renderTrackerSummary(level) { /* deprecated — summary is built in renderTracker */ }
 
 // Show the completion celebration the FIRST time today,
 // then a quieter "all done" notice on subsequent navigations.
@@ -1343,6 +1541,97 @@ function completeDhikr(key, reward, totalCount) {
 }
 
 // ==================== QURAN ====================
+function renderHadith() {
+  rolloverIfNewDay();
+  const today = getToday();
+  const sessionKey = 'hadithSession_' + today;
+  let session;
+  try { session = JSON.parse(localStorage.getItem(sessionKey) || '{}'); } catch (e) { session = {}; }
+  const logged = Array.isArray(session.hadiths) ? session.hadiths : [];
+
+  let html = '<div class="card" style="background: linear-gradient(135deg, #F59E0B, #D97706); color: white; margin-bottom: 16px; text-align: center;">';
+  html += '<div style="font-size: 20px; font-weight: 900;">📚 الأحاديث النبوية</div>';
+  html += '<div style="font-size: 13px; opacity: 0.9; margin-top: 4px;">اختر حديثاً واحداً على الأقل لقراءته اليوم</div>';
+  html += '</div>';
+
+  // Today's log
+  if (logged.length > 0) {
+    html += '<div class="card" style="background: linear-gradient(135deg, #FEF3C7, #FDE68A); border-color: #F59E0B; margin-bottom: 12px;">';
+    html += '<div style="font-weight: 800; margin-bottom: 8px;">✅ قرأت اليوم</div>';
+    html += '<div style="font-size: 13px;">' + logged.length + ' حديث</div>';
+    html += '</div>';
+  }
+
+  // Hadith list
+  if (typeof HADITH_COLLECTION !== 'undefined') {
+    html += '<div style="font-weight: 800; margin-bottom: 8px;">📖 الأحاديث المقترحة</div>';
+    HADITH_COLLECTION.forEach(h => {
+      const done = logged.includes(h.id);
+      html += '<div class="card" style="margin-bottom: 8px; padding: 12px; border-color: ' + (done ? 'var(--success)' : 'var(--border)') + ';">';
+      html += '<div style="font-size: 11px; color: var(--primary); font-weight: 700; margin-bottom: 4px;">' + escapeHtml(h.category) + ' · ' + escapeHtml(h.source) + ' · ' + escapeHtml(h.narrator) + '</div>';
+      html += '<div style="font-size: 14px; line-height: 1.8; margin-bottom: 8px;">' + escapeHtml(h.text) + '</div>';
+      html += '<button class="btn ' + (done ? 'btn-success' : 'btn-primary') + '" data-action="logHadith" data-args="[' + h.id + ']" style="width: 100%; padding: 10px;">' + (done ? '✓ قرأت' : 'سجل قراءتي') + '</button>';
+      html += '</div>';
+    });
+  }
+
+  // Tafseer refs
+  if (typeof TAFSEER_REFS !== 'undefined') {
+    html += '<div style="font-weight: 800; margin: 16px 0 8px 0;">📚 مراجع التفسير</div>';
+    TAFSEER_REFS.forEach(t => {
+      html += '<div class="card" style="margin-bottom: 8px; padding: 12px;">';
+      html += '<div style="display: flex; justify-content: space-between; align-items: center;">';
+      html += '<div><div style="font-weight: 700;">سورة ' + escapeHtml(t.surah) + ' (' + escapeHtml(t.verses) + ')</div>';
+      html += '<div style="font-size: 11px; color: var(--text-muted);">' + escapeHtml(t.topic) + ' · ' + escapeHtml(t.source) + '</div></div>';
+      html += '<button class="btn btn-primary" data-action="logTafseer" data-args="[' + t.id + ']" style="width: auto; padding: 8px 14px; font-size: 12px;">درستها</button>';
+      html += '</div></div>';
+    });
+  }
+
+  const target = document.getElementById('quranPartsContainer');
+  if (target) target.innerHTML = html;
+}
+
+function logHadith(hadithId) {
+  rolloverIfNewDay();
+  const valid = typeof HADITH_COLLECTION !== 'undefined' && HADITH_COLLECTION.find(h => h.id === hadithId);
+  if (!valid) return;
+  const today = getToday();
+  const sessionKey = 'hadithSession_' + today;
+  let session;
+  try { session = JSON.parse(localStorage.getItem(sessionKey) || '{}'); } catch (e) { session = {}; }
+  const logged = Array.isArray(session.hadiths) ? session.hadiths : [];
+  if (logged.includes(hadithId)) { showNotification('تنبيه', 'سجلت هذا الحديث اليوم'); return; }
+  logged.push(hadithId);
+  session.hadiths = logged;
+  localStorage.setItem(sessionKey, JSON.stringify(session));
+  state.xp = (state.xp || 0) + 10;
+  state.gems += 5;
+  vibrate(50); saveState(); updateHeaderGems();
+  showNotification('🎉', '+5 جواهر | +10 XP');
+  renderHadith();
+}
+
+function logTafseer(tafseerId) {
+  rolloverIfNewDay();
+  const valid = typeof TAFSEER_REFS !== 'undefined' && TAFSEER_REFS.find(t => t.id === tafseerId);
+  if (!valid) return;
+  const today = getToday();
+  const sessionKey = 'tafseerSession_' + today;
+  let session;
+  try { session = JSON.parse(localStorage.getItem(sessionKey) || '{}'); } catch (e) { session = {}; }
+  const logged = Array.isArray(session.refs) ? session.refs : [];
+  if (logged.includes(tafseerId)) { showNotification('تنبيه', 'سجلت هذا التفسير اليوم'); return; }
+  logged.push(tafseerId);
+  session.refs = logged;
+  localStorage.setItem(sessionKey, JSON.stringify(session));
+  state.xp = (state.xp || 0) + 12;
+  state.gems += 6;
+  vibrate(50); saveState(); updateHeaderGems();
+  showNotification('🎉', '+6 جواهر | +12 XP');
+  renderHadith();
+}
+
 function renderQuran() {
   rolloverIfNewDay();
   const today = getToday();
